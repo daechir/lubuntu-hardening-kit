@@ -17,8 +17,7 @@ install_config() {
 
 	# Copy our config for quick easy setup
 	sudo rm -rf ~/.config
-	cd config
-	cp -R . ~/.config
+    cp -R config ~/.config
 
 	# Add our custom SDDM theme
 	sudo cp -R Transcendence /usr/share/sddm/themes/

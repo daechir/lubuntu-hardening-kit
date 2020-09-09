@@ -23,7 +23,7 @@ install_setup() {
 
 
 cleanup_defaults() {
-	# Sysctl.d duplicates
+	# Cleanup sysctl.d duplicates
 	sudo rm -f /etc/sysctl.d/10-console-messages.conf
 	sudo rm -f /etc/sysctl.d/10-ipv6-privacy.conf
 	sudo rm -f /etc/sysctl.d/10-kernel-hardening.conf
@@ -31,7 +31,7 @@ cleanup_defaults() {
 	sudo rm -f /etc/sysctl.d/10-magic-sysrq.conf
 	sudo rm -f /etc/sysctl.d/10-network-security.conf
 	sudo rm -f /etc/sysctl.d/10-ptrace.conf
-	# Other random files
+	# Cleanup other random files
 	sudo rm -rf /usr/lib/modules-load.d
 	sudo rm -rf /usr/lib/sysctl.d
 
@@ -41,33 +41,45 @@ cleanup_defaults() {
 }
 
 
-toggle_services() {
-	# Disable some unused services and targets
-	sudo systemctl stop accounts-daemon.service 2> /dev/null
-	sudo systemctl disable accounts-daemon.service
-	sudo systemctl mask accounts-daemon.service
-	sudo systemctl stop dundee.service 2> /dev/null
-	sudo systemctl disable dundee.service
-	sudo systemctl mask dundee.service
-	sudo systemctl stop ofono.service 2> /dev/null
-	sudo systemctl disable ofono.service
-	sudo systemctl mask ofono.service
+toggle_systemctl() {
+    # Disable some unused services, sockets and targets
+    local systemctl=(
+      "accounts-daemon.service"
+      "avahi-daemon.service"
+      "avahi-dnsconfd.service"
+      "bluetooth.service"
+      "cups-browsed.service"
+      "dundee.service"
+      "ModemManager.service"
+      "ofono.service"
+      "snapd.service"
+      "systemd-coredump@.service"
+      "systemd-hibernate-resume@.service"
+      "systemd-hibernate.service"
+      "systemd-hybrid-sleep.service"
+      "systemd-suspend-then-hibernate.service"
+      "systemd-suspend.service"
+      "whoopsie.service"
+      "avahi-daemon.socket"
+      "snapd.socket"
+      "systemd-coredump.socket"
+      "bluetooth.target"
+      "hibernate.target"
+      "hybrid-sleep.target"
+      "remote-cryptsetup.target"
+      "remote-fs-pre.target"
+      "remote-fs.target"
+      "sleep.target"
+      "suspend-then-hibernate.target"
+      "suspend.target"
+    )
 
-	# Systemd sleep
-	sudo systemctl mask suspend.target 2> /dev/null
-	sudo systemctl mask hibernate.target 2> /dev/null
-	sudo systemctl mask hybrid-sleep.target 2> /dev/null
-	sudo systemctl mask suspend-then-hibernate.target 2> /dev/null
-
-	# Mask removed services and sockets
-	sudo systemctl mask avahi-daemon.service 2> /dev/null
-	sudo systemctl mask avahi-daemon.socket 2> /dev/null
-	sudo systemctl mask bluetooth.service 2> /dev/null
-	sudo systemctl mask cups-browsed.service 2> /dev/null
-	sudo systemctl mask ModemManager.service 2> /dev/null
-	sudo systemctl mask snapd.service 2> /dev/null
-	sudo systemctl mask snapd.socket 2> /dev/null
-	sudo systemctl mask whoopsie.service 2> /dev/null
+    for ctl in "${systemctl[@]}"
+    do
+      sudo systemctl stop "${ctl}" 2> /dev/null
+      sudo systemctl disable "${ctl}"
+      sudo systemctl mask "${ctl}"
+    done
 }
 
 
@@ -91,7 +103,7 @@ harden_parts() {
 	sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
 	echo -e "\n# End of file" | sudo tee -a  /etc/security/limits.conf > /dev/null
 
-	# Harden file permissions
+	# Harden file permissions (1/2)
 	echo -e "\n# Harden file permissions\numask 077" | sudo tee -a /etc/profile > /dev/null
 
 	# Harden hosts
@@ -140,7 +152,7 @@ harden_parts() {
 	# Regenerate grub
 	sudo update-grub
 
-	# Harden file permisssions
+	# Harden file permissions (2/2)
 	sudo chmod -R 700 /boot /etc/ufw /etc/NetworkManager /usr/lib/NetworkManager
 
 	# Harden mount options
@@ -158,7 +170,7 @@ harden_parts() {
 
 install_setup
 cleanup_defaults
-toggle_services
+toggle_systemctl
 misc_fixes
 harden_parts
 

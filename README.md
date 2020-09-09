@@ -2,8 +2,17 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 08/13/20 <br/>
-Version: v1
+Modified Date: 09/09/20 <br/>
+Version: v1a
+
+
+## Changelog
++ v1a
+  * S1.sh
+    + Cleanup and enhance some comments.
+    + Rename toggle_services() to toggle_systemctl().
+    + Simplify toggle_systemctl() disabling procedure.
+    + Add new ctls to the disabling procedure.
 
 
 ## Purpose
@@ -28,5 +37,5 @@ Btw, this script isn't intended to make your Lubuntu system bulletproof, if you 
 ## Supported Versions
 | Version | Supported |
 | --- | --- |
-| 20.04 LTS | Y |
+| 20.04* LTS | Y |
 | 18.04* LTS | N, Deprecated |
