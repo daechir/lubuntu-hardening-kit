@@ -14,20 +14,20 @@ active_device=$(ip -o link show | awk '{print $2,$9}' | grep "UP" | awk '{print 
 
 
 force_settings(){
-	local xenos_device=$1
+  local xenos_device=$1
 
-	ip link set dev "${xenos_device}" allmulticast off
-	ip link set dev "${xenos_device}" multicast off
-	resolvectl llmnr "${xenos_device}" 0
-	resolvectl mdns "${xenos_device}" 0
+  ip link set dev "${xenos_device}" allmulticast off
+  ip link set dev "${xenos_device}" multicast off
+  resolvectl llmnr "${xenos_device}" 0
+  resolvectl mdns "${xenos_device}" 0
 }
 
 
 if [[ $1 == wlo* || $1 == enp* ]]; then
-	case $2 in
-		up)
-            force_settings "$active_device"
-			;;
-	esac
+  case $2 in
+    up)
+      force_settings "$active_device"
+      ;;
+  esac
 fi
 

@@ -2,15 +2,18 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 09/10/20 <br/>
-Version: v1b
+Modified Date: 09/11/20 <br/>
+Version: v1c
 
 
 ## Changelog
-+ v1b
++ v1c
   * S1.sh
-    + Add nowatchdog kernel parameter.
-    + Add a few more modules.
+    + Hotfix toggle_systemctl()
+      * Static ctls break script execution.
+    + Fix spacing.
+  * S2.sh
+    + Fix spacing.
 
 
 ## Purpose
