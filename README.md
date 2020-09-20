@@ -2,18 +2,19 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 09/11/20 <br/>
-Version: v1c
+Modified Date: 09/19/20 <br/>
+Version: v1d
 
 
 ## Changelog
-+ v1c
++ v1d
   * S1.sh
-    + Hotfix toggle_systemctl()
-      * Static ctls break script execution.
-    + Fix spacing.
-  * S2.sh
-    + Fix spacing.
+    + Enhance cleanup_defaults.
+    + Add more default files to cleanup_defaults.
+    + Add systemd shutdown fixes.
+    + Enhance .bash_history restrictions.
+    + Remove 00_force_settings.conf.
+    + Enhance 00_control_multicast.sh.
 
 
 ## Purpose

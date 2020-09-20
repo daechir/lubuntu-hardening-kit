@@ -23,21 +23,23 @@ install_setup() {
 
 
 cleanup_defaults() {
-  # Cleanup sysctl.d duplicates
-  sudo rm -f /etc/sysctl.d/10-console-messages.conf
-  sudo rm -f /etc/sysctl.d/10-ipv6-privacy.conf
-  sudo rm -f /etc/sysctl.d/10-kernel-hardening.conf
-  sudo rm -f /etc/sysctl.d/10-link-restrictions.conf
-  sudo rm -f /etc/sysctl.d/10-magic-sysrq.conf
-  sudo rm -f /etc/sysctl.d/10-network-security.conf
-  sudo rm -f /etc/sysctl.d/10-ptrace.conf
-  # Cleanup other random files
-  sudo rm -rf /usr/lib/modules-load.d
-  sudo rm -rf /usr/lib/sysctl.d
+  # Cleanup Lubuntu defaults
+  local cleanup_paths=(
+    "/etc/modprobe.d/"
+    "/etc/modules-load.d/"
+    "/etc/NetworkManager/conf.d/"
+    "/etc/sysctl.d/"
+    "/usr/lib/modprobe.d/"
+    "/usr/lib/modules-load.d/"
+    "/usr/lib/NetworkManager/conf.d/"
+    "/usr/lib/sysctl.d/"
+  )
 
-  # Recreate cleaned up Ubuntu defaults
-  sudo mkdir /usr/lib/modules-load.d
-  sudo mkdir /usr/lib/sysctl.d
+  for path in "${cleanup_paths[@]}"
+  do
+    sudo rm -rf "${path}"
+    sudo mkdir "${path}"
+  done
 }
 
 
@@ -77,12 +79,16 @@ toggle_systemctl() {
   for ctl in "${systemctl[@]}"
   do
     local ctlactive=$(systemctl status "${ctl}" | grep -i "active: active")
+    local ctlexist=$(ls -la /usr/lib/systemd/system | grep -i "${ctl}")
 
     if [[ -n "${ctlactive}" ]]; then
        sudo systemctl stop "${ctl}" 2> /dev/null
     fi
 
-    sudo systemctl disable "${ctl}"
+    if [[ -n "${ctlexist}" ]]; then
+      sudo systemctl disable "${ctl}"
+    fi
+
     sudo systemctl mask "${ctl}"
   done
 }
@@ -91,17 +97,21 @@ toggle_systemctl() {
 misc_fixes() {
   # Adjust journal file size
   sudo sed -i "s/^#SystemMaxUse=/SystemMaxUse=50M/g" /etc/systemd/journald.conf
+
+  # Fix systemd shutdown hanging issue
+  sudo sed -i "s/^#DefaultTimeoutStopSec=90s/DefaultTimeoutStopSec=10s/g"  /etc/systemd/system.conf
+  sudo sed -i "s/^#DefaultTimeoutStartSec=90s/DefaultTimeoutStartSec=10s/g"  /etc/systemd/system.conf
 }
 
 
 harden_parts() {
-  # Harden .bash_history
+  # Harden history file creation
   sed -i "s/^HISTCONTROL=ignoreboth/#HISTCONTROL=ignoreboth/g" ~/.bashrc
   sed -i "s/^shopt -s histappend/#shopt -s histappend/g" ~/.bashrc
   sed -i "s/^HISTSIZE=1000/#HISTSIZE=1000/g" ~/.bashrc
   sed -i "s/^HISTFILESIZE=2000/#HISTFILESIZE=2000/g" ~/.bashrc
-  echo -e "\n# Disable .bash_history\nexport HISTSIZE=0" | tee -a ~/.bashrc > /dev/null
-  echo -e "\n# Disable .bash_history\nexport HISTSIZE=0" | sudo tee -a /etc/profile > /dev/null
+  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | tee -a ~/.bashrc > /dev/null
+  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | sudo tee -a /etc/profile > /dev/null
 
   # Harden coredumps
   echo -e "[Coredump]\nStorage=none\nProcessSizeMax=0" | sudo tee -a  /etc/systemd/coredump.conf > /dev/null
@@ -125,8 +135,6 @@ harden_parts() {
   sudo cp etc/modules/00_blacklisted.conf /etc/modprobe.d/
 
   # Harden NetworkManager
-  echo -e "[connection]\nconnection.llmnr=0\nconnection.mdns=0" | sudo tee -a  /etc/NetworkManager/conf.d/00_force_settings.conf > /dev/null
-  echo -e "[connection]\nconnection.llmnr=0\nconnection.mdns=0" | sudo tee -a  /usr/lib/NetworkManager/conf.d/00_force_settings.conf > /dev/null
   sudo cp etc/NetworkManager/dispatcher.d/00_control_multicast.sh /etc/NetworkManager/dispatcher.d/
   sudo chmod +x /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
 
@@ -138,7 +146,7 @@ harden_parts() {
   echo "EDITOR=rnano" | sudo tee -a /etc/environment > /dev/null
 
   # Harden sysctl
-  sudo cp etc/00_xenos_hardening.conf /etc/sysctl.d/99-sysctl.conf
+  sudo cp etc/00_xenos_hardening.conf /etc/sysctl.d/
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.conf
 
   # Harden Systemd resolved settings
