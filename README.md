@@ -2,19 +2,16 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 09/19/20 <br/>
-Version: v1d
+Modified Date: 09/20/20 <br/>
+Version: v1e
 
 
 ## Changelog
-+ v1d
++ v1e
   * S1.sh
-    + Enhance cleanup_defaults.
-    + Add more default files to cleanup_defaults.
-    + Add systemd shutdown fixes.
-    + Enhance .bash_history restrictions.
-    + Remove 00_force_settings.conf.
-    + Enhance 00_control_multicast.sh.
+    + Add .lesshst restrictions.
+    + Add LESSECURE env variable.
+    + Remove LESSOPEN and LESSCLOSE env variables.
 
 
 ## Purpose

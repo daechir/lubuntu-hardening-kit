@@ -82,7 +82,7 @@ toggle_systemctl() {
     local ctlexist=$(ls -la /usr/lib/systemd/system | grep -i "${ctl}")
 
     if [[ -n "${ctlactive}" ]]; then
-       sudo systemctl stop "${ctl}" 2> /dev/null
+      sudo systemctl stop "${ctl}" 2> /dev/null
     fi
 
     if [[ -n "${ctlexist}" ]]; then
@@ -105,14 +105,6 @@ misc_fixes() {
 
 
 harden_parts() {
-  # Harden history file creation
-  sed -i "s/^HISTCONTROL=ignoreboth/#HISTCONTROL=ignoreboth/g" ~/.bashrc
-  sed -i "s/^shopt -s histappend/#shopt -s histappend/g" ~/.bashrc
-  sed -i "s/^HISTSIZE=1000/#HISTSIZE=1000/g" ~/.bashrc
-  sed -i "s/^HISTFILESIZE=2000/#HISTFILESIZE=2000/g" ~/.bashrc
-  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | tee -a ~/.bashrc > /dev/null
-  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | sudo tee -a /etc/profile > /dev/null
-
   # Harden coredumps
   echo -e "[Coredump]\nStorage=none\nProcessSizeMax=0" | sudo tee -a  /etc/systemd/coredump.conf > /dev/null
   sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
@@ -124,11 +116,29 @@ harden_parts() {
   # Harden hosts
   sudo sed -i "1,3!d" /etc/hosts
 
+  ## Harden history file creation
+  # Disable defaults
+  sed -i "s/^HISTCONTROL=ignoreboth/#HISTCONTROL=ignoreboth/g" ~/.bashrc
+  sed -i "s/^shopt -s histappend/#shopt -s histappend/g" ~/.bashrc
+  sed -i "s/^HISTSIZE=1000/#HISTSIZE=1000/g" ~/.bashrc
+  sed -i "s/^HISTFILESIZE=2000/#HISTFILESIZE=2000/g" ~/.bashrc
+  # Add our new values
+  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | tee -a ~/.bashrc > /dev/null
+  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | sudo tee -a /etc/profile > /dev/null
+  echo -e "\n# Disable .lesshst\nLESSHISTFILE=/dev/null\nLESSHISTSIZE=0\nexport LESSHISTFILE LESSHISTSIZE" | tee -a ~/.bashrc > /dev/null
+  echo -e "\n# Disable .lesshst\nLESSHISTFILE=/dev/null\nLESSHISTSIZE=0\nexport LESSHISTFILE LESSHISTSIZE" | sudo tee -a /etc/profile > /dev/null
+
   # Harden kernel startup parameters
   sudo sed -i 's/^GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor spectre_v2=on spec_store_bypass_disable=on tsx=off tsx_async_abort=full,nosmt mds=full,nosmt l1tf=full,force nosmt=force kvm.nx_huge_pages=force random.trust_cpu=off intel_iommu=on amd_iommu=on efi=disable_early_pci_dma slab_nomerge slub_debug=FZ init_on_alloc=1 init_on_free=1 mce=0 pti=on vsyscall=none page_alloc.shuffle=1 lockdown=confidentiality module.sig_enforce=1 extra_latent_entropy oops=panic nowatchdog ipv6.disable=1"/g' /etc/default/grub
   echo -e '#!/bin/bash\n\n# Force our kernel parameters on each boot\nsudo sysctl -p\n\nexit 0' | sudo tee -a /etc/rc.local > /dev/null
   sudo chmod 755 /etc/rc.local
   sudo chmod +x  /etc/rc.local
+
+  # Harden less
+  echo -e "\n# Enable LESSSECURE mode\nexport LESSSECURE=1" | tee -a ~/.bashrc > /dev/null
+  echo -e "\n# Enable LESSSECURE mode\nexport LESSSECURE=1" | sudo tee -a /etc/profile > /dev/null
+  echo -e "\n# Unset LESSOPEN and LESSCLOSE\nunset LESSOPEN LESSCLOSE" | tee -a ~/.bashrc > /dev/null
+  echo -e "\n# Unset LESSOPEN and LESSCLOSE\nunset LESSOPEN LESSCLOSE" | sudo tee -a /etc/profile > /dev/null
 
   # Harden modules
   # Kernel level
