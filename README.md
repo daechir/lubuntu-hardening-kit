@@ -2,16 +2,16 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 09/20/20 <br/>
-Version: v1e
+Modified Date: 10/04/20 <br/>
+Version: v1f
 
 
 ## Changelog
-+ v1e
++ v1f
   * S1.sh
-    + Add .lesshst restrictions.
-    + Add LESSECURE env variable.
-    + Remove LESSOPEN and LESSCLOSE env variables.
+    * Add debugfs to GRUB_CMDLINE_LINUX.
+    + Add a few more modules.
+    + Add a few more kernel parameters.
 
 
 ## Purpose
@@ -38,3 +38,4 @@ Btw, this script isn't intended to make your Lubuntu system bulletproof, if you 
 | --- | --- |
 | 20.04* LTS | Y |
 | 18.04* LTS | N, Deprecated |
+
