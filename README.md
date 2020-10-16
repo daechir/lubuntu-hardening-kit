@@ -2,18 +2,15 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 10/04/20 <br/>
-Version: v1g
+Modified Date: 10/15/20 <br/>
+Version: v1h
 
 
 ## Changelog
-+ v1g
++ v1h
   * S1.sh
-    + Review all modules.
-    + Reorganize all modules alphabetically first by folder name and second by name.
-    + Add a few more modules:
-      * All watchdog drivers.
-      * A missing thunderbolt driver.
+    + Add a few more modules.
+    + Enhance and cleanup existing kernel parameters.
 
 
 ## Purpose
@@ -32,7 +29,9 @@ Btw, this script isn't intended to make your Lubuntu system bulletproof, if you 
 
 ## Usage
 `chmod +x S1.sh` <br/>
-`./S1.sh`
+`./S1.sh` <br/>
+Or <br/>
+`sudo bash S1.sh`
 
 
 ## Supported Versions
