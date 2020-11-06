@@ -132,7 +132,6 @@ harden_parts() {
   sudo sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor spectre_v2=on spec_store_bypass_disable=on tsx=off tsx_async_abort=full,nosmt mds=full,nosmt l1tf=full,force nosmt=force kvm.nx_huge_pages=force random.trust_cpu=off intel_iommu=on amd_iommu=on efi=disable_early_pci_dma slab_nomerge slub_debug=FZ init_on_alloc=1 init_on_free=1 mce=0 pti=on vsyscall=none page_alloc.shuffle=1 lockdown=confidentiality module.sig_enforce=1 extra_latent_entropy oops=panic debugfs=off nowatchdog ipv6.disable=1"/g' /etc/default/grub
   echo -e '#!/bin/bash\n\n# Force our kernel parameters on each boot\nsudo sysctl -p\n\nexit 0' | sudo tee -a /etc/rc.local > /dev/null
   sudo chmod 755 /etc/rc.local
-  sudo chmod +x  /etc/rc.local
 
   # Harden less
   echo -e "\n# Enable LESSSECURE mode\nexport LESSSECURE=1" | tee -a ~/.bashrc > /dev/null
@@ -146,7 +145,8 @@ harden_parts() {
 
   # Harden NetworkManager
   sudo cp etc/NetworkManager/dispatcher.d/00_control_multicast.sh /etc/NetworkManager/dispatcher.d/
-  sudo chmod +x /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
+  sudo chmod 700 /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
+  sudo chattr +i /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
 
   # Harden root account
   sudo sed -i "15 s/^# auth/auth/g" /etc/pam.d/su

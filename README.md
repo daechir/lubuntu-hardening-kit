@@ -3,13 +3,15 @@ Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
 Modified Date: 11/06/20 <br/>
-Version: v1i
+Version: v1i1
 
 
 ## Changelog
-+ v1i
++ v1i1
   * S1.sh
-    + Add more modules.
+    + Cleanup execution bits.
+    + Make 00_control_multicast.sh adhere to systemd.net-naming-scheme.
+    + Also make 00_control_multicast.sh immutable.
 
 
 ## Purpose

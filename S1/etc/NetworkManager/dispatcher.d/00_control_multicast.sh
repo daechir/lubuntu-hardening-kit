@@ -4,8 +4,8 @@
 #
 # Author: Daechir
 # Author URL: https://github.com/daechir
-# Modified Date: 09/19/20
-# Version: v1a
+# Modified Date: 11/06/20
+# Version: v1b
 
 
 ## Variables
@@ -14,10 +14,10 @@ active_device=$(ip -o link show | awk '{print $2,$9}' | grep -i "up" | awk '{pri
 
 if [[ -n "${active_device}" ]]; then
   case "${active_device}" in
-    wlo*)
+    wl*)
       active_device_connection=$(nmcli connection show --active | grep -i "wifi" | awk '{print $1,$2,$3}')
       ;;
-    enp*)
+    en*)
       active_device_connection=$(nmcli connection show --active | grep -i "ethernet" | awk '{print $1,$2,$3}')
       ;;
   esac
@@ -32,7 +32,7 @@ setup_connectivity(){
   ip link set dev "${xenos_device}" multicast off
 
   if [[ -n "${xenos_connection}" ]]; then
-    if [[ "${xenos_device}" == wlo* ]]; then
+    if [[ "${xenos_device}" == wl* ]]; then
       nmcli connection mod "${xenos_connection}" 802-11-wireless.powersave 2
     fi
 
@@ -45,7 +45,7 @@ setup_connectivity(){
 }
 
 
-if [[ $1 == wlo* || $1 == enp* ]]; then
+if [[ $1 == wl* || $1 == en* ]]; then
   case $2 in
     up)
       setup_connectivity "${active_device}" "${active_device_connection}"
