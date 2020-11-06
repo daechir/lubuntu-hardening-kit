@@ -2,15 +2,14 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 10/15/20 <br/>
-Version: v1h
+Modified Date: 11/06/20 <br/>
+Version: v1i
 
 
 ## Changelog
-+ v1h
++ v1i
   * S1.sh
-    + Add a few more modules.
-    + Enhance and cleanup existing kernel parameters.
+    + Add more modules.
 
 
 ## Purpose
@@ -29,8 +28,8 @@ Btw, this script isn't intended to make your Lubuntu system bulletproof, if you 
 
 ## Usage
 `chmod +x S1.sh` <br/>
-`./S1.sh` <br/>
-Or <br/>
+`./S1.sh`
+<br/><br/> Or <br/><br/>
 `sudo bash S1.sh`
 
 
