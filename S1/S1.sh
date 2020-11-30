@@ -50,20 +50,29 @@ toggle_systemctl() {
     "avahi-daemon.service"
     "avahi-dnsconfd.service"
     "bluetooth.service"
+    "colord.service"
     "cups-browsed.service"
     "dundee.service"
+    "irqbalance.service"
+    "kerneloops.service"
     "ModemManager.service"
+    "networkd-dispatcher.service"
     "ofono.service"
+    "rsync.service"
+    "rsyslog.service"
+    "rtkit-daemon.service"
     "snapd.service"
     "systemd-coredump@.service"
     "systemd-hibernate-resume@.service"
     "systemd-hibernate.service"
     "systemd-hybrid-sleep.service"
+    "systemd-networkd.service"
     "systemd-suspend-then-hibernate.service"
     "systemd-suspend.service"
     "whoopsie.service"
     "avahi-daemon.socket"
     "snapd.socket"
+    "syslog.socket"
     "systemd-coredump.socket"
     "bluetooth.target"
     "hibernate.target"
@@ -159,7 +168,8 @@ harden_parts() {
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.d/
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.conf
 
-  # Harden Systemd resolved settings
+  # Harden Systemd-resolved settings  
+  sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf  
   sudo sed -i "1,12!d" /etc/systemd/resolved.conf
   echo -e "\n[Resolve]\n#DNS=\nFallbackDNS=\nDomains=\nDNSSEC=yes\nDNSOverTLS=no\nMulticastDNS=no\nLLMNR=no\nCache=yes\nDNSStubListener=yes\nReadEtcHosts=yes\nResolveUnicastSingleLabel=no" | sudo tee -a  /etc/systemd/resolved.conf > /dev/null
 

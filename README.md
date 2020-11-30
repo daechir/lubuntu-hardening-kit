@@ -2,16 +2,16 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 11/06/20 <br/>
-Version: v1i1
+Modified Date: 11/16/20 <br/>
+Version: v1j
 
 
 ## Changelog
-+ v1i1
++ v1j
   * S1.sh
-    + Cleanup execution bits.
-    + Make 00_control_multicast.sh adhere to systemd.net-naming-scheme.
-    + Also make 00_control_multicast.sh immutable.
+    + Add more ctls to toggle_systemctl().
+    + Deprecate NetworkManagers handling of dns via /etc/resolv.conf. 
+    	* By default we will now allow systemd-resolved.service to handle all dns queries. This change results in various security and performance gains.
 
 
 ## Purpose
