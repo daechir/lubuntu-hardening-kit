@@ -2,16 +2,20 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 11/16/20 <br/>
-Version: v1j
+Modified Date: 12/06/20 <br/>
+Version: v1k
 
 
 ## Changelog
-+ v1j
++ v1k
   * S1.sh
-    + Add more ctls to toggle_systemctl().
-    + Deprecate NetworkManagers handling of dns via /etc/resolv.conf. 
-    	* By default we will now allow systemd-resolved.service to handle all dns queries. This change results in various security and performance gains.
+    + Ship a minimal .bashrc instead of altering the existing one(s).
+    + Dynamically generate grub_cmdline_linux parameters.
+    + Also add a few new kernel parameters.
+    + Add SYSTEMD_PAGERSECURE=1 env variable.
+      * This variable won't take effect until Systemd v247 arrives downstream.
+      * Also the latest /etc/systemd/resolved.conf changes for Systemd v247 will be post-poned for now due to its extensive changes.
+    + Update sysctl parameters.
 
 
 ## Purpose

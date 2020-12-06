@@ -1,0 +1,43 @@
+#
+# ~/.bashrc
+#
+
+# If not running interactively, don't do anything
+[[ $- != *i* ]] && return
+
+# Disable .bash_history
+HISTFILE=/dev/null
+HISTFILESIZE=0
+HISTSIZE=0
+export HISTFILE HISTFILESIZE HISTSIZE
+
+# Disable .lesshst
+LESSHISTFILE=/dev/null
+LESSHISTSIZE=0
+export LESSHISTFILE LESSHISTSIZE
+
+# Harden LESS
+SYSTEMD_PAGERSECURE=1
+LESSSECURE=1
+export SYSTEMD_PAGERSECURE LESSSECURE
+
+# Unset LESSOPEN and LESSCLOSE
+unset LESSOPEN LESSCLOSE
+
+# Enhance terminal
+PROMPT_COMMAND='echo -en "\033]0; ${USER} @ ${PWD##*/} \a"'
+PS1='\n\e[0;36m\w\e[m\n>'
+
+# Add apt alias's
+alias aptu='sudo apt update && sudo apt full-upgrade -y'
+alias aptc='sudo apt autoremove -y && sudo apt autoclean && sudo apt clean'
+
+# Add grep alias's
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias cgrep='cgrep --color=auto -C 1'
+
+# Add ls alias's
+alias ls='ls --color=auto'
+alias ll='ls -la'

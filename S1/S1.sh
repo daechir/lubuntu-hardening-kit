@@ -11,14 +11,14 @@ install_setup() {
   sudo ufw logging off
 
   # Then update apt database
-  sudo apt update -y
+  sudo apt update
 
   # Next remove some default programs
   sudo apt remove --purge 2048-qt avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd cups-browsed geoclue-2.0 mobile-broadband-provider-info modemmanager noblenote qlipper qtpass quassel samba-libs snapd transmission-qt trojita usb-modeswitch usb-modeswitch-data vim whoopsie -y
 
   # Finally add our custom programs and upgrade the system
   sudo apt install bleachbit gufw -y
-  sudo apt full-upgrade -y && sudo apt autoremove -y && sudo apt clean -y && sudo apt autoclean -y
+  sudo apt full-upgrade -y && sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
 }
 
 
@@ -114,6 +114,10 @@ misc_fixes() {
 
 
 harden_parts() {
+  # Harden .bashrc
+  sudo cp tilde/bashrc /etc/skel/.bashrc
+  sudo cp /etc/skel/.bashrc ~
+
   # Harden coredumps
   echo -e "[Coredump]\nStorage=none\nProcessSizeMax=0" | sudo tee -a  /etc/systemd/coredump.conf > /dev/null
   sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
@@ -125,27 +129,56 @@ harden_parts() {
   # Harden hosts
   sudo sed -i "1,3!d" /etc/hosts
 
-  ## Harden history file creation
-  # Disable defaults
-  sed -i "s/^HISTCONTROL=ignoreboth/#HISTCONTROL=ignoreboth/g" ~/.bashrc
-  sed -i "s/^shopt -s histappend/#shopt -s histappend/g" ~/.bashrc
-  sed -i "s/^HISTSIZE=1000/#HISTSIZE=1000/g" ~/.bashrc
-  sed -i "s/^HISTFILESIZE=2000/#HISTFILESIZE=2000/g" ~/.bashrc
-  # Add our new values
-  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | tee -a ~/.bashrc > /dev/null
+  # Harden history file creation
   echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | sudo tee -a /etc/profile > /dev/null
-  echo -e "\n# Disable .lesshst\nLESSHISTFILE=/dev/null\nLESSHISTSIZE=0\nexport LESSHISTFILE LESSHISTSIZE" | tee -a ~/.bashrc > /dev/null
   echo -e "\n# Disable .lesshst\nLESSHISTFILE=/dev/null\nLESSHISTSIZE=0\nexport LESSHISTFILE LESSHISTSIZE" | sudo tee -a /etc/profile > /dev/null
 
-  # Harden kernel startup parameters
-  sudo sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor spectre_v2=on spec_store_bypass_disable=on tsx=off tsx_async_abort=full,nosmt mds=full,nosmt l1tf=full,force nosmt=force kvm.nx_huge_pages=force random.trust_cpu=off intel_iommu=on amd_iommu=on efi=disable_early_pci_dma slab_nomerge slub_debug=FZ init_on_alloc=1 init_on_free=1 mce=0 pti=on vsyscall=none page_alloc.shuffle=1 lockdown=confidentiality module.sig_enforce=1 extra_latent_entropy oops=panic debugfs=off nowatchdog ipv6.disable=1"/g' /etc/default/grub
+  ## Harden kernel startup parameters
+  local is_intel_cpu=$(lscpu | grep -i "intel(r)" 2> /dev/null || echo "")
+  # Begin grub_cmdline_line generation
+  # Core security features
+  local grub_cmdline_linux="apparmor=1 lsm=lockdown,yama,apparmor"
+  # CPU mitigations
+  grub_cmdline_linux="${grub_cmdline_linux} spectre_v2=on"
+  grub_cmdline_linux="${grub_cmdline_linux} spec_store_bypass_disable=on"
+  grub_cmdline_linux="${grub_cmdline_linux} tsx=off tsx_async_abort=full,nosmt"
+  grub_cmdline_linux="${grub_cmdline_linux} mds=full,nosmt"
+  grub_cmdline_linux="${grub_cmdline_linux} l1tf=full,force"
+  grub_cmdline_linux="${grub_cmdline_linux} nosmt=force"
+  grub_cmdline_linux="${grub_cmdline_linux} kvm.nx_huge_pages=force"
+  # Distrust embedded CPU entropy
+  grub_cmdline_linux="${grub_cmdline_linux} random.trust_cpu=off"
+  # DMA hardening and misc fixes
+  if [[ -n "${is_intel_cpu}" ]]; then
+    grub_cmdline_linux="${grub_cmdline_linux} intel_iommu=on"
+  else
+    grub_cmdline_linux="${grub_cmdline_linux} amd_iommu=on"
+  fi
+  grub_cmdline_linux="${grub_cmdline_linux} efi=disable_early_pci_dma"
+  # Kernel hardening
+  grub_cmdline_linux="${grub_cmdline_linux} init_on_alloc=1 init_on_free=1"
+  grub_cmdline_linux="${grub_cmdline_linux} mce=0"
+  grub_cmdline_linux="${grub_cmdline_linux} page_alloc.shuffle=1"
+  grub_cmdline_linux="${grub_cmdline_linux} pti=on"
+  grub_cmdline_linux="${grub_cmdline_linux} slab_nomerge"
+  grub_cmdline_linux="${grub_cmdline_linux} slub_debug=FZ"
+  grub_cmdline_linux="${grub_cmdline_linux} vsyscall=none"
+  # Custom additions
+  grub_cmdline_linux="${grub_cmdline_linux} debugfs=off"
+  grub_cmdline_linux="${grub_cmdline_linux} extra_latent_entropy"
+  grub_cmdline_linux="${grub_cmdline_linux} ipv6.disable=1"
+  grub_cmdline_linux="${grub_cmdline_linux} lockdown=confidentiality"
+  grub_cmdline_linux="${grub_cmdline_linux} module.sig_enforce=1"
+  grub_cmdline_linux="${grub_cmdline_linux} nowatchdog"
+  grub_cmdline_linux="${grub_cmdline_linux} nohibernate"
+  grub_cmdline_linux="${grub_cmdline_linux} oops=panic"
+  grub_cmdline_linux="${grub_cmdline_linux} systemd.dump_core=0"
+  sudo sed -i "s/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"${grub_cmdline_linux}\"/g" /etc/default/grub
   echo -e '#!/bin/bash\n\n# Force our kernel parameters on each boot\nsudo sysctl -p\n\nexit 0' | sudo tee -a /etc/rc.local > /dev/null
   sudo chmod 755 /etc/rc.local
 
   # Harden less
-  echo -e "\n# Enable LESSSECURE mode\nexport LESSSECURE=1" | tee -a ~/.bashrc > /dev/null
-  echo -e "\n# Enable LESSSECURE mode\nexport LESSSECURE=1" | sudo tee -a /etc/profile > /dev/null
-  echo -e "\n# Unset LESSOPEN and LESSCLOSE\nunset LESSOPEN LESSCLOSE" | tee -a ~/.bashrc > /dev/null
+  echo -e "\n# Harden LESS\nSYSTEMD_PAGERSECURE=1\nLESSSECURE=1\nexport SYSTEMD_PAGERSECURE LESSSECURE" | sudo tee -a /etc/profile > /dev/null
   echo -e "\n# Unset LESSOPEN and LESSCLOSE\nunset LESSOPEN LESSCLOSE" | sudo tee -a /etc/profile > /dev/null
 
   # Harden modules
@@ -168,8 +201,8 @@ harden_parts() {
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.d/
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.conf
 
-  # Harden Systemd-resolved settings  
-  sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf  
+  # Harden Systemd-resolved settings
+  sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
   sudo sed -i "1,12!d" /etc/systemd/resolved.conf
   echo -e "\n[Resolve]\n#DNS=\nFallbackDNS=\nDomains=\nDNSSEC=yes\nDNSOverTLS=no\nMulticastDNS=no\nLLMNR=no\nCache=yes\nDNSStubListener=yes\nReadEtcHosts=yes\nResolveUnicastSingleLabel=no" | sudo tee -a  /etc/systemd/resolved.conf > /dev/null
 
