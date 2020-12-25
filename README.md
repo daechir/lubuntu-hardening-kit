@@ -2,20 +2,27 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 12/06/20 <br/>
-Version: v1k
+Modified Date: 12/24/20 <br/>
+Version: v1l
 
 
 ## Changelog
-+ v1k
++ v1l
   * S1.sh
-    + Ship a minimal .bashrc instead of altering the existing one(s).
-    + Dynamically generate grub_cmdline_linux parameters.
-    + Also add a few new kernel parameters.
-    + Add SYSTEMD_PAGERSECURE=1 env variable.
-      * This variable won't take effect until Systemd v247 arrives downstream.
-      * Also the latest /etc/systemd/resolved.conf changes for Systemd v247 will be post-poned for now due to its extensive changes.
-    + Update sysctl parameters.
+    + Add superlite variable to install_setup.
+      * Write any value to this variable to use it.
+    + Add other variable logic to install_setup.
+    + Add apt-mark hold to prevent reinstallation of removed packages.
+    + Deprecate cleanup_defaults.
+      * See below for more info.
+    + Deprecate rc.local usage.
+    + Add lubuntu-control-defaults.service and lubuntu-control-defaults.sh.
+      * lubuntu-control-defaults* will ensure that:
+        + Misc Lubuntu customization files are removed consistently and automatically.
+        + Downstream kernel modprobe.d files will be automatically removed.
+          * They generally aren't very useful and get shipped continuously.
+        + Kernel hardening / optimizations remain in place on each boot and across updates.
+          * No more annoying /usr/lib/sysctl.d files appearing and overriding our defaults.
 
 
 ## Purpose
@@ -26,17 +33,16 @@ The Lubuntu Hardening Kit serves as a custom automated hardening script to furth
 	* Masking unused or generally exploitable services (accounts-daemon, whoopsie, etc).
 + Enforcing kernel CPU mitigations
 + Enforcing kernel module restrictions
-+ Enforcing kernel hardening and optimizations via rc.local on each boot
++ Enforcing kernel hardening and optimizations
 
 And much much more. Audit the scripts to find out more. <br/>
 Btw, this script isn't intended to make your Lubuntu system bulletproof, if you want that it's best to move to something like Arch Linux and customize it yourself.
 
 
 ## Usage
-`chmod +x S1.sh` <br/>
-`./S1.sh`
-<br/><br/> Or <br/><br/>
-`sudo bash S1.sh`
+In the live cd or usb install Lubuntu on a single partition (i.e. automatic).<br/>
+Then merely execute this command in terminal inside the newly installed Lubuntu:<br/>
+`bash S1.sh`
 
 
 ## Supported Versions

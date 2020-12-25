@@ -4,42 +4,50 @@ set -xe
 
 
 install_setup() {
-  # First enable the firewall
+  local superlite=""
+
+  # Setup the firewall
   sudo ufw enable
   sudo systemctl enable ufw.service
   sudo systemctl start ufw.service
+  sudo ufw default deny incoming
+  sudo ufw default deny forward
   sudo ufw logging off
 
-  # Then update apt database
+  # Update apt database
   sudo apt update
 
-  # Next remove some default programs
-  sudo apt remove --purge 2048-qt avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd cups-browsed geoclue-2.0 mobile-broadband-provider-info modemmanager noblenote qlipper qtpass quassel samba-libs snapd transmission-qt trojita usb-modeswitch usb-modeswitch-data vim whoopsie -y
+  # Remove some default programs
+  local core_purge="2048-qt apport apport-symptoms avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd colord cups-browsed fcitx ftp geoclue-2.0 irqbalance java-common kerneloops mobile-broadband-provider-info modemmanager noblenote popularity-contest qlipper qtpass quassel samba-libs skanlite snapd spice-vdagent tcpdump telnet transmission-qt trojita ubuntu-report unattended-upgrades usb-modeswitch usb-modeswitch-data vim vim-common whoopsie"
 
-  # Finally add our custom programs and upgrade the system
-  sudo apt install bleachbit gufw -y
-  sudo apt full-upgrade -y && sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
-}
+  if [[ -n "${superlite}" ]]; then
+    core_purge="${core_purge} ark compton cups htop k3b kcalc libreoffice muon partitionmanager plasma-discover qps screengrab scrot usb-creator-kde vlc"
+  fi
 
+  sudo apt remove --purge $core_purge -y
 
-cleanup_defaults() {
-  # Cleanup Lubuntu defaults
-  local cleanup_paths=(
-    "/etc/modprobe.d/"
-    "/etc/modules-load.d/"
-    "/etc/NetworkManager/conf.d/"
-    "/etc/sysctl.d/"
-    "/usr/lib/modprobe.d/"
-    "/usr/lib/modules-load.d/"
-    "/usr/lib/NetworkManager/conf.d/"
-    "/usr/lib/sysctl.d/"
-  )
+  # Cleanup unused packages and or dependencies
+  sudo apt autoremove -y
 
-  for path in "${cleanup_paths[@]}"
-  do
-    sudo rm -rf "${path}"
-    sudo mkdir "${path}"
-  done
+  # Add our custom programs and upgrade the system
+  local core_pack="bleachbit gufw"
+  
+  if [[ -z "${superlite}" ]]; then
+    core_pack="${core_pack} simple-scan"
+  fi
+
+  sudo apt install $core_pack -y
+
+  sudo apt full-upgrade -y
+  
+  # Once again cleanup unused packages and or dependencies
+  sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
+  
+  # And finally apt-mark hold the purged packages to prevent reinstallation  
+  #
+  # Note: This is done last to ensure installed programs come properly shipped with their dependencies.
+  # If they get held too early they wont install at all in some cases (Cross dependencies, large dependency trees, etc).
+  sudo apt-mark hold $core_purge
 }
 
 
@@ -47,6 +55,9 @@ toggle_systemctl() {
   # Disable some unused services, sockets and targets
   local systemctl=(
     "accounts-daemon.service"
+    "apport-autoreport.service"
+    "apport-forward@.service"
+    "apport.service"
     "avahi-daemon.service"
     "avahi-dnsconfd.service"
     "bluetooth.service"
@@ -62,6 +73,8 @@ toggle_systemctl() {
     "rsyslog.service"
     "rtkit-daemon.service"
     "snapd.service"
+    "spice-vdagent.service"
+    "spice-vdagentd.service"
     "systemd-coredump@.service"
     "systemd-hibernate-resume@.service"
     "systemd-hibernate.service"
@@ -69,9 +82,12 @@ toggle_systemctl() {
     "systemd-networkd.service"
     "systemd-suspend-then-hibernate.service"
     "systemd-suspend.service"
+    "unattended-upgrades.service"
     "whoopsie.service"
+    "apport-forward.socket"
     "avahi-daemon.socket"
     "snapd.socket"
+    "spice-vdagentd.socket"
     "syslog.socket"
     "systemd-coredump.socket"
     "bluetooth.target"
@@ -85,6 +101,10 @@ toggle_systemctl() {
     "suspend.target"
   )
 
+  if [[ -n "${superlite}" ]]; then
+    systemctl="${systemctl[@]} cups.service cups.socket"
+  fi
+  
   for ctl in "${systemctl[@]}"
   do
     local ctlactive=$(systemctl status "${ctl}" | grep -i "active: active")
@@ -174,8 +194,6 @@ harden_parts() {
   grub_cmdline_linux="${grub_cmdline_linux} oops=panic"
   grub_cmdline_linux="${grub_cmdline_linux} systemd.dump_core=0"
   sudo sed -i "s/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"${grub_cmdline_linux}\"/g" /etc/default/grub
-  echo -e '#!/bin/bash\n\n# Force our kernel parameters on each boot\nsudo sysctl -p\n\nexit 0' | sudo tee -a /etc/rc.local > /dev/null
-  sudo chmod 755 /etc/rc.local
 
   # Harden less
   echo -e "\n# Harden LESS\nSYSTEMD_PAGERSECURE=1\nLESSSECURE=1\nexport SYSTEMD_PAGERSECURE LESSSECURE" | sudo tee -a /etc/profile > /dev/null
@@ -231,11 +249,18 @@ harden_parts() {
   echo -e "[Service]\nSupplementaryGroups=sudo" | sudo tee -a  /etc/systemd/system/systemd-logind.service.d/00_hide_pid.conf  > /dev/null
   sudo chmod -R 644 /etc/systemd/system/systemd-logind.service.d/
   echo "proc /proc proc noatime,nosuid,nodev,noexec,hidepid=2,gid=sudo 0 0" | sudo tee -a  /etc/fstab > /dev/null
+
+  # Setup lubuntu-control-defaults
+  sudo cp usr/bin/lubuntu-control-defaults.sh /usr/bin/
+  sudo chmod 700 /usr/bin/lubuntu-control-defaults.sh
+  sudo cp etc/systemd/system/lubuntu-control-defaults.service /etc/systemd/system/
+  sudo chmod 644 /etc/systemd/system/lubuntu-control-defaults.service
+  sudo chattr +i /usr/bin/lubuntu-control-defaults.sh
+  sudo systemctl enable lubuntu-control-defaults.service
 }
 
 
 install_setup
-cleanup_defaults
 toggle_systemctl
 misc_fixes
 harden_parts
