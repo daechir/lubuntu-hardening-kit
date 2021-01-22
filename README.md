@@ -2,27 +2,14 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 12/24/20 <br/>
-Version: v1l
+Modified Date: 01/21/20 <br/>
+Version: v1m
 
 
 ## Changelog
-+ v1l
++ v1m
   * S1.sh
-    + Add superlite variable to install_setup.
-      * Write any value to this variable to use it.
-    + Add other variable logic to install_setup.
-    + Add apt-mark hold to prevent reinstallation of removed packages.
-    + Deprecate cleanup_defaults.
-      * See below for more info.
-    + Deprecate rc.local usage.
-    + Add lubuntu-control-defaults.service and lubuntu-control-defaults.sh.
-      * lubuntu-control-defaults* will ensure that:
-        + Misc Lubuntu customization files are removed consistently and automatically.
-        + Downstream kernel modprobe.d files will be automatically removed.
-          * They generally aren't very useful and get shipped continuously.
-        + Kernel hardening / optimizations remain in place on each boot and across updates.
-          * No more annoying /usr/lib/sysctl.d files appearing and overriding our defaults.
+    + 00_blacklisted and 00_xenos_hardening version bump.
 
 
 ## Purpose
