@@ -3,8 +3,8 @@
 #
 # Author: Daechir
 # Author URL: https://github.com/daechir
-# Modified Date: 12/24/20
-# Version: v1
+# Modified Date: 02/20/21
+# Version: v1a
 
 
 control_defaults(){
@@ -19,7 +19,9 @@ control_defaults(){
 
   for file in $files1
   do
-    if [[ "${file##*/}" != "00_blacklisted.conf" ]]; then
+    local filegrep=$(grep -i "xenos" "${file}")
+
+    if [[ -z "${filegrep}" ]]; then
       rm -f "${file}"
     fi
   done

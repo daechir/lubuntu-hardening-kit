@@ -28,6 +28,7 @@ ProtectKernelModules=yes
 ProtectKernelTunables=yes
 ProtectKernelLogs=yes
 ProtectProc=invisible
+ProcSubset=pid
 #ProtectSystem=strict
 RestrictAddressFamilies=AF_UNIX
 RestrictNamespaces=yes

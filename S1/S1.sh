@@ -17,8 +17,8 @@ install_setup() {
   # Update apt database
   sudo apt update
 
-  # Remove some default programs
-  local core_purge="2048-qt apport apport-symptoms avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd colord cups-browsed fcitx ftp geoclue-2.0 irqbalance java-common kerneloops mobile-broadband-provider-info modemmanager noblenote popularity-contest qlipper qtpass quassel samba-libs skanlite snapd spice-vdagent tcpdump telnet transmission-qt trojita ubuntu-report unattended-upgrades usb-modeswitch usb-modeswitch-data vim vim-common whoopsie"
+  ## Remove some default programs
+  local core_purge="2048-qt apport apport-symptoms avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd colord cups-browsed fcitx firefox ftp geoclue-2.0 irqbalance java-common kerneloops mobile-broadband-provider-info modemmanager noblenote popularity-contest qlipper qtpass quassel samba-libs skanlite snapd spice-vdagent tcpdump telnet transmission-qt trojita ubuntu-report unattended-upgrades usb-modeswitch usb-modeswitch-data vim vim-common whoopsie"
 
   if [[ -n "${superlite}" ]]; then
     core_purge="${core_purge} ark compton cups htop k3b kcalc libreoffice muon partitionmanager plasma-discover qps screengrab scrot usb-creator-kde vlc"
@@ -29,25 +29,26 @@ install_setup() {
   # Cleanup unused packages and or dependencies
   sudo apt autoremove -y
 
-  # Add our custom programs and upgrade the system
-  local core_pack="bleachbit gufw"
-  
+  ## Add our custom programs and upgrade the system
+  local core_pack="apt-transport-https curl bleachbit gnupg gufw"
+
   if [[ -z "${superlite}" ]]; then
     core_pack="${core_pack} simple-scan"
   fi
-
-  sudo apt install $core_pack -y
-
-  sudo apt full-upgrade -y
   
+  sudo apt install $core_pack -y
+  
+  # Add brave
+  curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
+  echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+  sudo apt update
+  sudo apt install brave-browser -y
+
+  # Upgrade the system
+  sudo apt full-upgrade -y
+
   # Once again cleanup unused packages and or dependencies
   sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
-  
-  # And finally apt-mark hold the purged packages to prevent reinstallation  
-  #
-  # Note: This is done last to ensure installed programs come properly shipped with their dependencies.
-  # If they get held too early they wont install at all in some cases (Cross dependencies, large dependency trees, etc).
-  sudo apt-mark hold $core_purge
 }
 
 
@@ -55,6 +56,7 @@ toggle_systemctl() {
   # Disable some unused services, sockets and targets
   local systemctl=(
     "accounts-daemon.service"
+    "alsa-state.service"
     "apport-autoreport.service"
     "apport-forward@.service"
     "apport.service"
@@ -69,6 +71,7 @@ toggle_systemctl() {
     "ModemManager.service"
     "networkd-dispatcher.service"
     "ofono.service"
+    "rc-local.service"
     "rsync.service"
     "rsyslog.service"
     "rtkit-daemon.service"
@@ -104,7 +107,7 @@ toggle_systemctl() {
   if [[ -n "${superlite}" ]]; then
     systemctl="${systemctl[@]} cups.service cups.socket"
   fi
-  
+
   for ctl in "${systemctl[@]}"
   do
     local ctlactive=$(systemctl status "${ctl}" | grep -i "active: active")
@@ -128,20 +131,25 @@ misc_fixes() {
   sudo sed -i "s/^#SystemMaxUse=/SystemMaxUse=50M/g" /etc/systemd/journald.conf
 
   # Fix systemd shutdown hanging issue
-  sudo sed -i "s/^#DefaultTimeoutStopSec=90s/DefaultTimeoutStopSec=10s/g"  /etc/systemd/system.conf
-  sudo sed -i "s/^#DefaultTimeoutStartSec=90s/DefaultTimeoutStartSec=10s/g"  /etc/systemd/system.conf
+  sudo sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/g"  /etc/systemd/system.conf
+  sudo sed -i "s/^#DefaultTimeoutStartSec=.*/DefaultTimeoutStartSec=10s/g"  /etc/systemd/system.conf
 }
 
 
 harden_parts() {
+  # Harden apt
+  echo -e "# Enable apt sandboxing.\nAPT::Sandbox::Seccomp \"true\";" | sudo tee -a /etc/apt/apt.conf.d/40sandbox > /dev/null
+
   # Harden .bashrc
   sudo cp tilde/bashrc /etc/skel/.bashrc
   sudo cp /etc/skel/.bashrc ~
 
   # Harden coredumps
   echo -e "[Coredump]\nStorage=none\nProcessSizeMax=0" | sudo tee -a  /etc/systemd/coredump.conf > /dev/null
+  sudo sed -i "s/^#CrashShell=.*/CrashShell=no/g" /etc/systemd/system.conf
+  sudo sed -i "s/^#DefaultLimitCORE=/DefaultLimitCORE=0/g" /etc/systemd/system.conf
+  sudo sed -i "s/^#DumpCore=.*/DumpCore=no/g" /etc/systemd/system.conf
   sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
-  echo -e "\n# End of file" | sudo tee -a  /etc/security/limits.conf > /dev/null
 
   # Harden file permissions (1/2)
   echo -e "\n# Harden file permissions\numask 077" | sudo tee -a /etc/profile > /dev/null
@@ -199,9 +207,15 @@ harden_parts() {
   echo -e "\n# Harden LESS\nSYSTEMD_PAGERSECURE=1\nLESSSECURE=1\nexport SYSTEMD_PAGERSECURE LESSSECURE" | sudo tee -a /etc/profile > /dev/null
   echo -e "\n# Unset LESSOPEN and LESSCLOSE\nunset LESSOPEN LESSCLOSE" | sudo tee -a /etc/profile > /dev/null
 
-  # Harden modules
-  # Kernel level
-  sudo cp etc/modules/00_blacklisted.conf /etc/modprobe.d/
+  # Harden maxsyslogins
+  echo -e "* hard maxsyslogins 1\n\n# End of file" | sudo tee -a  /etc/security/limits.conf > /dev/null
+
+  ## Harden modules
+  # Early boot (Kernel init)
+  for modprobe in etc/modprobe.d/*
+  do
+    sudo cp "${modprobe}" /etc/modprobe.d/
+  done
 
   # Harden NetworkManager
   sudo cp etc/NetworkManager/dispatcher.d/00_control_multicast.sh /etc/NetworkManager/dispatcher.d/
@@ -225,10 +239,10 @@ harden_parts() {
   echo -e "\n[Resolve]\n#DNS=\nFallbackDNS=\nDomains=\nDNSSEC=yes\nDNSOverTLS=no\nMulticastDNS=no\nLLMNR=no\nCache=yes\nDNSStubListener=yes\nReadEtcHosts=yes\nResolveUnicastSingleLabel=no" | sudo tee -a  /etc/systemd/resolved.conf > /dev/null
 
   # Harden Systemd sleep
-  sudo sed -i "s/^#AllowSuspend=yes/AllowSuspend=no/g" /etc/systemd/sleep.conf
-  sudo sed -i "s/^#AllowHibernation=yes/AllowHibernation=no/g" /etc/systemd/sleep.conf
-  sudo sed -i "s/^#AllowSuspendThenHibernate=yes/AllowSuspendThenHibernate=no/g" /etc/systemd/sleep.conf
-  sudo sed -i "s/^#AllowHybridSleep=yes/AllowHybridSleep=no/g" /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowSuspend=.*/AllowSuspend=no/g" /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowHibernation=.*/AllowHibernation=no/g" /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowSuspendThenHibernate=.*/AllowSuspendThenHibernate=no/g" /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowHybridSleep=.*/AllowHybridSleep=no/g" /etc/systemd/sleep.conf
   sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-hibernate.desktop
   sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-suspend.desktop
   sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-leave.desktop
@@ -251,10 +265,10 @@ harden_parts() {
   echo "proc /proc proc noatime,nosuid,nodev,noexec,hidepid=2,gid=sudo 0 0" | sudo tee -a  /etc/fstab > /dev/null
 
   # Setup lubuntu-control-defaults
-  sudo cp usr/bin/lubuntu-control-defaults.sh /usr/bin/
-  sudo chmod 700 /usr/bin/lubuntu-control-defaults.sh
   sudo cp etc/systemd/system/lubuntu-control-defaults.service /etc/systemd/system/
   sudo chmod 644 /etc/systemd/system/lubuntu-control-defaults.service
+  sudo cp usr/bin/lubuntu-control-defaults.sh /usr/bin/
+  sudo chmod 700 /usr/bin/lubuntu-control-defaults.sh
   sudo chattr +i /usr/bin/lubuntu-control-defaults.sh
   sudo systemctl enable lubuntu-control-defaults.service
 }

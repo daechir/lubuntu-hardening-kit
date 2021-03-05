@@ -2,14 +2,33 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 01/21/21 <br/>
-Version: v1m
+Modified Date: 03/03/21 <br/>
+Version: v1n
 
 
 ## Changelog
-+ v1m
++ v1n
   * S1.sh
-    + 00_blacklisted and 00_xenos_hardening version bump.
+    + Deprecate firefox and add brave.
+    + Deprecate apt-mark hold logic.
+    	* No longer persists across reboots as desired (Effectively does nothing).
+    + Add new ctls.
+    + Add apt sandboxing.
+    + Add further coredump restrictions.
+    + Restrict maxsyslogins to 1.
+    + /etc/modprobe.d/*:
+      * Split 00_blacklisted.conf into seperate files.
+      * Update all file section(s) using a new automatic method.
+    + 00_control_multicast.sh:
+      * Simplify logic.
+    + lubuntu-control-defaults*:
+      * Add ProcSubset to the service file.
+      * Adjust the script to ignore our modprobe.d changes.
+  * S2.sh
+    + Simplify logic.
+    + Automatically fetch sddm-transcendence theme.
+    + Remove firefox in config files where applicable.
+    + Update config files to latest versions.
 
 
 ## Purpose
