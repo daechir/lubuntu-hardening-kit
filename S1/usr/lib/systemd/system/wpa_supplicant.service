@@ -1,0 +1,44 @@
+[Unit]
+Description=WPA supplicant
+Before=network.target
+After=dbus.service
+Wants=network.target
+IgnoreOnIsolate=true
+
+[Service]
+Type=dbus
+BusName=fi.w1.wpa_supplicant1
+ExecStart=/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant
+
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+DevicePolicy=closed
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateMounts=yes
+#PrivateNetwork=yes
+PrivateTmp=yes
+#PrivateUsers=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+#ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectProc=invisible
+ProcSubset=pid
+ProtectSystem=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6 AF_PACKET
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+IPAddressDeny=any
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
+Alias=dbus-fi.w1.wpa_supplicant1.service

@@ -5,6 +5,7 @@ set -xe
 
 install_setup() {
   local superlite=""
+  local usecanon=""
 
   # Setup the firewall
   sudo ufw enable
@@ -18,10 +19,10 @@ install_setup() {
   sudo apt update
 
   ## Remove some default programs
-  local core_purge="2048-qt apport apport-symptoms avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd colord cups-browsed fcitx firefox ftp geoclue-2.0 irqbalance java-common kerneloops mobile-broadband-provider-info modemmanager noblenote popularity-contest qlipper qtpass quassel samba-libs skanlite snapd spice-vdagent tcpdump telnet transmission-qt trojita ubuntu-report unattended-upgrades usb-modeswitch usb-modeswitch-data vim vim-common whoopsie"
+  local core_purge="2048-qt apport apport-symptoms avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd colord compton cups-browsed fcitx firefox ftp geoclue-2.0 irqbalance java-common kerneloops mobile-broadband-provider-info modemmanager noblenote partitionmanager plasma-discover popularity-contest qlipper qps qtpass quassel samba-libs skanlite snapd spice-vdagent tcpdump telnet transmission-qt trojita ubuntu-report unattended-upgrades usb-creator-kde usb-modeswitch usb-modeswitch-data vim vim-common whoopsie"
 
   if [[ -n "${superlite}" ]]; then
-    core_purge="${core_purge} ark compton cups htop k3b kcalc libreoffice muon partitionmanager plasma-discover qps screengrab scrot usb-creator-kde vlc"
+    core_purge="${core_purge} ark cups htop k3b kcalc libreoffice muon screengrab scrot vlc"
   fi
 
   sudo apt remove --purge $core_purge -y
@@ -30,24 +31,46 @@ install_setup() {
   sudo apt autoremove -y
 
   ## Add our custom programs and upgrade the system
-  local core_pack="apt-transport-https curl bleachbit gnupg gufw"
+  local core_pack_1="apt-transport-https curl bleachbit gnupg gufw"
 
   if [[ -z "${superlite}" ]]; then
-    core_pack="${core_pack} simple-scan"
+    core_pack_1="${core_pack} simple-scan"
   fi
   
-  sudo apt install $core_pack -y
+  # Install core_pack_1
+  sudo apt install $core_pack_1 -y
   
-  # Add brave
+  # Brave
   curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
   echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+  local core_pack_2="brave-browser"
+
+  # Canon printer drivers
+  if [[ -z "${superlite}" && -n "${usecanon}" ]]; then
+    sudo add-apt-repository ppa:thierry-f/fork-michael-gruz -y
+    core_pack_2="${core_pack_2} cnijfilter2"
+  fi
+
+  # Libreoffice-fresh
+  if [[ -z "${superlite}" ]]; then
+  	sudo add-apt-repository ppa:libreoffice/ppa -y
+  fi
+  
+  # Install core_pack_2
   sudo apt update
-  sudo apt install brave-browser -y
-
-  # Upgrade the system
+  
+  sudo apt install $core_pack_2 -y
+  
+  # Force the use of the newest mainline kernel
+  curl -o ubuntu-mainline-kernel.sh https://raw.githubusercontent.com/pimlie/ubuntu-mainline-kernel.sh/master/ubuntu-mainline-kernel.sh
+  sudo mv ubuntu-mainline-kernel.sh /usr/bin/
+  sudo chmod 700 /usr/bin/ubuntu-mainline-kernel.sh
+  sudo ubuntu-mainline-kernel.sh -i --yes
+  
+  # Upgrade the rest of the system
   sudo apt full-upgrade -y
-
-  # Once again cleanup unused packages and or dependencies
+  
+  # And once again cleanup unused packages and or dependencies
   sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
 }
 
@@ -83,6 +106,7 @@ toggle_systemctl() {
     "systemd-hibernate.service"
     "systemd-hybrid-sleep.service"
     "systemd-networkd.service"
+    "systemd-rfkill.service"
     "systemd-suspend-then-hibernate.service"
     "systemd-suspend.service"
     "unattended-upgrades.service"
@@ -93,6 +117,7 @@ toggle_systemctl() {
     "spice-vdagentd.socket"
     "syslog.socket"
     "systemd-coredump.socket"
+    "systemd-rfkill.socket"
     "bluetooth.target"
     "hibernate.target"
     "hybrid-sleep.target"
@@ -129,7 +154,7 @@ toggle_systemctl() {
 misc_fixes() {
   # Adjust journal file size
   sudo sed -i "s/^#SystemMaxUse=/SystemMaxUse=50M/g" /etc/systemd/journald.conf
-
+  
   # Fix systemd shutdown hanging issue
   sudo sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/g"  /etc/systemd/system.conf
   sudo sed -i "s/^#DefaultTimeoutStartSec=.*/DefaultTimeoutStartSec=10s/g"  /etc/systemd/system.conf
@@ -151,7 +176,7 @@ harden_parts() {
   sudo sed -i "s/^#DumpCore=.*/DumpCore=no/g" /etc/systemd/system.conf
   sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
 
-  # Harden file permissions (1/2)
+  # Harden file permissions (1/3)
   echo -e "\n# Harden file permissions\numask 077" | sudo tee -a /etc/profile > /dev/null
 
   # Harden hosts
@@ -247,10 +272,15 @@ harden_parts() {
   sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-suspend.desktop
   sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-leave.desktop
 
+  # Harden Systemd services
+  sudo sed -i "s/^#SystemCallArchitectures=/SystemCallArchitectures=native/g" /etc/systemd/system.conf
+
+  sudo cp -R usr/lib/systemd/system/ /etc/systemd/
+  
   # Regenerate grub
   sudo update-grub
 
-  # Harden file permissions (2/2)
+  # Harden file permissions (2/3)
   sudo chmod -R 700 /boot /etc/ufw /etc/NetworkManager /usr/lib/NetworkManager
 
   # Harden mount options
@@ -261,16 +291,17 @@ harden_parts() {
   echo "tmpfs /dev/shm tmpfs defaults,noatime,nosuid,nodev,noexec 0 0" | sudo tee -a  /etc/fstab > /dev/null
   sudo mkdir /etc/systemd/system/systemd-logind.service.d/
   echo -e "[Service]\nSupplementaryGroups=sudo" | sudo tee -a  /etc/systemd/system/systemd-logind.service.d/00_hide_pid.conf  > /dev/null
-  sudo chmod -R 644 /etc/systemd/system/systemd-logind.service.d/
   echo "proc /proc proc noatime,nosuid,nodev,noexec,hidepid=2,gid=sudo 0 0" | sudo tee -a  /etc/fstab > /dev/null
 
   # Setup lubuntu-control-defaults
   sudo cp etc/systemd/system/lubuntu-control-defaults.service /etc/systemd/system/
-  sudo chmod 644 /etc/systemd/system/lubuntu-control-defaults.service
   sudo cp usr/bin/lubuntu-control-defaults.sh /usr/bin/
   sudo chmod 700 /usr/bin/lubuntu-control-defaults.sh
   sudo chattr +i /usr/bin/lubuntu-control-defaults.sh
   sudo systemctl enable lubuntu-control-defaults.service
+  
+  # Harden file permissions (3/3)
+  sudo find /etc/systemd/system/ -type f -exec chmod 644 {} \;
 }
 
 

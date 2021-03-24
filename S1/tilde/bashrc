@@ -30,6 +30,8 @@ PS1='\n\e[0;36m\w\e[m\n>'
 
 # Add apt alias's
 alias aptu='sudo apt update && sudo apt full-upgrade -y'
+alias aptuc='sudo ubuntu-mainline-kernel.sh -c'
+alias aptuk='sudo ubuntu-mainline-kernel.sh -i --yes'
 alias aptc='sudo apt autoremove -y && sudo apt autoclean && sudo apt clean'
 
 # Add grep alias's
@@ -41,3 +43,11 @@ alias cgrep='cgrep --color=auto -C 1'
 # Add ls alias's
 alias ls='ls --color=auto'
 alias ll='ls -la'
+
+# Add session alias's
+alias sleave="sudo find /var/log -type f -exec rm -f {} \; && sudo journalctl --rotate --vacuum-time=1s && sudo bleachbit --preset --clean && bleachbit --preset --clean && systemctl poweroff"
+alias supleave="aptu && aptuk && aptc && sleave"
+
+# Add system alias's
+alias serr="journalctl -b -p err"
+alias swarn="journalctl -b -p warning"

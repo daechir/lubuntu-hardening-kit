@@ -1,0 +1,42 @@
+[Unit]
+Description=Disk Manager
+Documentation=man:udisks(8)
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.UDisks2
+ExecStart=/usr/lib/udisks2/udisksd
+KillSignal=SIGINT
+
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_SYS_RAWIO
+#DevicePolicy=strict
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+#PrivateDevices=yes
+#PrivateMounts=yes
+#PrivateNetwork=yes
+#PrivateTmp=yes
+#PrivateUsers=yes
+#ProtectClock=yes
+#ProtectControlGroups=yes
+#ProtectHome=yes
+ProtectHostname=yes
+#ProtectKernelModules=yes
+#ProtectKernelTunables=yes
+#ProtectKernelLogs=yes
+#ProtectProc=invisible
+#ProcSubset=pid
+#ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service @mount
+SystemCallErrorNumber=EPERM
+IPAddressDeny=any
+UMask=0077
+
+[Install]
+WantedBy=graphical.target

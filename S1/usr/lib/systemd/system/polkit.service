@@ -1,0 +1,38 @@
+[Unit]
+Description=Authorization Manager
+Documentation=man:polkit(8)
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.PolicyKit1
+ExecStart=/usr/lib/policykit-1/polkitd --no-debug
+
+CapabilityBoundingSet=CAP_SETGID CAP_SETUID CAP_SYS_PTRACE
+DevicePolicy=closed
+LockPersonality=yes
+#MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateMounts=yes
+PrivateNetwork=yes
+PrivateTmp=yes
+#PrivateUsers=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+#ProtectProc=invisible
+#ProcSubset=pid
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+IPAddressDeny=any
+UMask=0077

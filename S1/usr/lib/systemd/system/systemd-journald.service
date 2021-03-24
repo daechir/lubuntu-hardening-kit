@@ -1,0 +1,62 @@
+#  SPDX-License-Identifier: LGPL-2.1-or-later
+#
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=Journal Service
+Documentation=man:systemd-journald.service(8) man:journald.conf(5)
+DefaultDependencies=no
+Requires=systemd-journald.socket
+After=systemd-journald.socket systemd-journald-dev-log.socket systemd-journald-audit.socket syslog.socket
+Before=sysinit.target
+
+[Service]
+ExecStart=/lib/systemd/systemd-journald
+FileDescriptorStoreMax=4224
+LimitNOFILE=524288
+Nice=-1
+OOMScoreAdjust=-250
+Restart=always
+RestartSec=0
+RuntimeDirectoryPreserve=yes
+RuntimeDirectory=systemd/journal
+Sockets=systemd-journald.socket systemd-journald-dev-log.socket systemd-journald-audit.socket
+StandardOutput=null
+Type=notify
+WatchdogSec=3min
+
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_PTRACE CAP_SYSLOG CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_CHOWN CAP_DAC_READ_SEARCH CAP_FOWNER CAP_SETUID CAP_SETGID CAP_MAC_OVERRIDE
+DevicePolicy=closed
+DeviceAllow=char-* rw
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+#PrivateDevices=yes
+PrivateMounts=yes
+PrivateNetwork=yes
+#PrivateTmp=yes
+#PrivateUsers=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+#ProtectKernelLogs=yes
+ProtectProc=invisible
+#ProcSubset=pid
+ProtectSystem=full
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+IPAddressDeny=any
+UMask=0077

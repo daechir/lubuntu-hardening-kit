@@ -2,44 +2,32 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 03/03/21 <br/>
-Version: v1n
+Modified Date: 03/24/21 <br/>
+Version: v1o
 
 
 ## Changelog
-+ v1n
++ v1o
   * S1.sh
-    + Deprecate firefox and add brave.
-    + Deprecate apt-mark hold logic.
-    	* No longer persists across reboots as desired (Effectively does nothing).
-    + Add new ctls.
-    + Add apt sandboxing.
-    + Add further coredump restrictions.
-    + Restrict maxsyslogins to 1.
-    + /etc/modprobe.d/*:
-      * Split 00_blacklisted.conf into seperate files.
-      * Update all file section(s) using a new automatic method.
-    + 00_control_multicast.sh:
-      * Simplify logic.
-    + lubuntu-control-defaults*:
-      * Add ProcSubset to the service file.
-      * Adjust the script to ignore our modprobe.d changes.
-  * S2.sh
-    + Simplify logic.
-    + Automatically fetch sddm-transcendence theme.
-    + Remove firefox in config files where applicable.
-    + Update config files to latest versions.
+    + Add canon printer drivers.
+    + Use libreoffice-fresh over Ubuntu release package.
+    + Force the use of the newest mainline kernel by default.
+    + Add a few more ctls.
+    + Enhance bashrc alias's.
+    + Begin systemd service hardening.
 
 
 ## Purpose
 The Lubuntu Hardening Kit serves as a custom automated hardening script to further lockdown Lubuntu systems by:
 + Turning on the firewall
++ Forcing the use of the newest mainline kernel
 + Reducing the attack surface by:
 	* Removing unused or generally exploitable features (avahi, cups-browsed, snapd, etc).
 	* Masking unused or generally exploitable services (accounts-daemon, whoopsie, etc).
 + Enforcing kernel CPU mitigations
 + Enforcing kernel module restrictions
 + Enforcing kernel hardening and optimizations
++ Isolating or sandboxing systemd services
 
 And much much more. Audit the scripts to find out more. <br/>
 Btw, this script isn't intended to make your Lubuntu system bulletproof, if you want that it's best to move to something like Arch Linux and customize it yourself.
