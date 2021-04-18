@@ -36,10 +36,10 @@ install_setup() {
   if [[ -z "${superlite}" ]]; then
     core_pack_1="${core_pack} simple-scan"
   fi
-  
+
   # Install core_pack_1
   sudo apt install $core_pack_1 -y
-  
+
   # Brave
   curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
   echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
@@ -55,21 +55,21 @@ install_setup() {
   if [[ -z "${superlite}" ]]; then
   	sudo add-apt-repository ppa:libreoffice/ppa -y
   fi
-  
+
   # Install core_pack_2
   sudo apt update
-  
+
   sudo apt install $core_pack_2 -y
-  
+
   # Force the use of the newest mainline kernel
   curl -o ubuntu-mainline-kernel.sh https://raw.githubusercontent.com/pimlie/ubuntu-mainline-kernel.sh/master/ubuntu-mainline-kernel.sh
   sudo mv ubuntu-mainline-kernel.sh /usr/bin/
   sudo chmod 700 /usr/bin/ubuntu-mainline-kernel.sh
   sudo ubuntu-mainline-kernel.sh -i --yes
-  
+
   # Upgrade the rest of the system
   sudo apt full-upgrade -y
-  
+
   # And once again cleanup unused packages and or dependencies
   sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
 }
@@ -79,6 +79,7 @@ toggle_systemctl() {
   # Disable some unused services, sockets and targets
   local systemctl=(
     "accounts-daemon.service"
+    "alsa-restore.service"
     "alsa-state.service"
     "apport-autoreport.service"
     "apport-forward@.service"
@@ -106,9 +107,14 @@ toggle_systemctl() {
     "systemd-hibernate.service"
     "systemd-hybrid-sleep.service"
     "systemd-networkd.service"
+    "systemd-networkd-wait-online.service"
+    "systemd-network-generator.service"
     "systemd-rfkill.service"
     "systemd-suspend-then-hibernate.service"
     "systemd-suspend.service"
+    "systemd-timedated.service"
+    "systemd-timesyncd.service"
+    "systemd-time-wait-sync.service"
     "unattended-upgrades.service"
     "whoopsie.service"
     "apport-forward.socket"
@@ -117,6 +123,8 @@ toggle_systemctl() {
     "spice-vdagentd.socket"
     "syslog.socket"
     "systemd-coredump.socket"
+    "systemd-journal-remote.socket"
+    "systemd-networkd.socket"
     "systemd-rfkill.socket"
     "bluetooth.target"
     "hibernate.target"
@@ -154,7 +162,10 @@ toggle_systemctl() {
 misc_fixes() {
   # Adjust journal file size
   sudo sed -i "s/^#SystemMaxUse=/SystemMaxUse=50M/g" /etc/systemd/journald.conf
-  
+
+  # Fix apparmor boot time hanging issue
+  sudo sed -i "s/^#write-cache/write-cache/g" /etc/apparmor/parser.conf
+
   # Fix systemd shutdown hanging issue
   sudo sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/g"  /etc/systemd/system.conf
   sudo sed -i "s/^#DefaultTimeoutStartSec=.*/DefaultTimeoutStartSec=10s/g"  /etc/systemd/system.conf
@@ -162,12 +173,16 @@ misc_fixes() {
 
 
 harden_parts() {
+  # Deprecate /etc/environment
+  sudo sed -i "d" /etc/environment
+  
   # Harden apt
   echo -e "# Enable apt sandboxing.\nAPT::Sandbox::Seccomp \"true\";" | sudo tee -a /etc/apt/apt.conf.d/40sandbox > /dev/null
 
-  # Harden .bashrc
-  sudo cp tilde/bashrc /etc/skel/.bashrc
-  sudo cp /etc/skel/.bashrc ~
+  # Harden consoles and ttys
+  echo -e "\n+:(wheel):LOCAL\n-:ALL:ALL" | sudo tee -a /etc/security/access.conf > /dev/null
+  sudo touch /etc/securetty
+  echo -e "# File which lists terminals from which root can log in.\n# See securetty(5) for details." | sudo tee -a /etc/securetty > /dev/null
 
   # Harden coredumps
   echo -e "[Coredump]\nStorage=none\nProcessSizeMax=0" | sudo tee -a  /etc/systemd/coredump.conf > /dev/null
@@ -176,15 +191,8 @@ harden_parts() {
   sudo sed -i "s/^#DumpCore=.*/DumpCore=no/g" /etc/systemd/system.conf
   sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
 
-  # Harden file permissions (1/3)
-  echo -e "\n# Harden file permissions\numask 077" | sudo tee -a /etc/profile > /dev/null
-
   # Harden hosts
   sudo sed -i "1,3!d" /etc/hosts
-
-  # Harden history file creation
-  echo -e "\n# Disable .bash_history\nHISTFILE=/dev/null\nHISTFILESIZE=0\nHISTSIZE=0\nexport HISTFILE HISTFILESIZE HISTSIZE" | sudo tee -a /etc/profile > /dev/null
-  echo -e "\n# Disable .lesshst\nLESSHISTFILE=/dev/null\nLESSHISTSIZE=0\nexport LESSHISTFILE LESSHISTSIZE" | sudo tee -a /etc/profile > /dev/null
 
   ## Harden kernel startup parameters
   local is_intel_cpu=$(lscpu | grep -i "intel(r)" 2> /dev/null || echo "")
@@ -228,10 +236,6 @@ harden_parts() {
   grub_cmdline_linux="${grub_cmdline_linux} systemd.dump_core=0"
   sudo sed -i "s/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"${grub_cmdline_linux}\"/g" /etc/default/grub
 
-  # Harden less
-  echo -e "\n# Harden LESS\nSYSTEMD_PAGERSECURE=1\nLESSSECURE=1\nexport SYSTEMD_PAGERSECURE LESSSECURE" | sudo tee -a /etc/profile > /dev/null
-  echo -e "\n# Unset LESSOPEN and LESSCLOSE\nunset LESSOPEN LESSCLOSE" | sudo tee -a /etc/profile > /dev/null
-
   # Harden maxsyslogins
   echo -e "* hard maxsyslogins 1\n\n# End of file" | sudo tee -a  /etc/security/limits.conf > /dev/null
 
@@ -247,12 +251,12 @@ harden_parts() {
   sudo chmod 700 /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
   sudo chattr +i /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
 
+  # Harden profile
+  sudo cp etc/profile /etc/
+
   # Harden root account
   sudo sed -i "15 s/^# auth/auth/g" /etc/pam.d/su
   sudo passwd -l root
-
-  # Harden sudoedit
-  echo "EDITOR=rnano" | sudo tee -a /etc/environment > /dev/null
 
   # Harden sysctl
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.d/
@@ -260,8 +264,7 @@ harden_parts() {
 
   # Harden Systemd-resolved settings
   sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-  sudo sed -i "1,12!d" /etc/systemd/resolved.conf
-  echo -e "\n[Resolve]\n#DNS=\nFallbackDNS=\nDomains=\nDNSSEC=yes\nDNSOverTLS=no\nMulticastDNS=no\nLLMNR=no\nCache=yes\nDNSStubListener=yes\nReadEtcHosts=yes\nResolveUnicastSingleLabel=no" | sudo tee -a  /etc/systemd/resolved.conf > /dev/null
+  sudo cp etc/resolved.conf /etc/systemd
 
   # Harden Systemd sleep
   sudo sed -i "s/^#AllowSuspend=.*/AllowSuspend=no/g" /etc/systemd/sleep.conf
@@ -276,12 +279,6 @@ harden_parts() {
   sudo sed -i "s/^#SystemCallArchitectures=/SystemCallArchitectures=native/g" /etc/systemd/system.conf
 
   sudo cp -R usr/lib/systemd/system/ /etc/systemd/
-  
-  # Regenerate grub
-  sudo update-grub
-
-  # Harden file permissions (2/3)
-  sudo chmod -R 700 /boot /etc/ufw /etc/NetworkManager /usr/lib/NetworkManager
 
   # Harden mount options
   sudo sed -i "s/defaults/defaults,noatime/g" /etc/fstab
@@ -293,15 +290,23 @@ harden_parts() {
   echo -e "[Service]\nSupplementaryGroups=sudo" | sudo tee -a  /etc/systemd/system/systemd-logind.service.d/00_hide_pid.conf  > /dev/null
   echo "proc /proc proc noatime,nosuid,nodev,noexec,hidepid=2,gid=sudo 0 0" | sudo tee -a  /etc/fstab > /dev/null
 
+  # Harden file permissions
+  sudo chmod -R 700 /boot /etc/ufw /etc/NetworkManager /usr/lib/NetworkManager
+  sudo find /etc/systemd/system/ -type f -exec chmod 644 {} \;
+
+  # Regenerate grub
+  sudo update-grub
+
+  # Setup .bashrc
+  sudo cp tilde/bashrc /etc/skel/.bashrc
+  sudo cp /etc/skel/.bashrc ~
+
   # Setup lubuntu-control-defaults
   sudo cp etc/systemd/system/lubuntu-control-defaults.service /etc/systemd/system/
   sudo cp usr/bin/lubuntu-control-defaults.sh /usr/bin/
   sudo chmod 700 /usr/bin/lubuntu-control-defaults.sh
   sudo chattr +i /usr/bin/lubuntu-control-defaults.sh
   sudo systemctl enable lubuntu-control-defaults.service
-  
-  # Harden file permissions (3/3)
-  sudo find /etc/systemd/system/ -type f -exec chmod 644 {} \;
 }
 
 

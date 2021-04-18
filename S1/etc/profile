@@ -1,0 +1,51 @@
+# Source global bash config, when interactive but not posix or sh mode
+if test "$BASH" &&\
+   test "$PS1" &&\
+   test -z "$POSIXLY_CORRECT" &&\
+   test "${0#-}" != sh &&\
+   test -r /etc/bash.bashrc
+then
+    . /etc/bash.bashrc
+fi
+
+# Source /etc/profile.d
+if [ -d /etc/profile.d ]; then
+  for i in /etc/profile.d/*.sh; do
+    if [ -r $i ]; then
+      . $i
+    fi
+  done
+  unset i
+fi
+
+# Set our umask
+umask 077
+
+# Disable .bash_history
+HISTFILE=/dev/null
+HISTFILESIZE=0
+HISTSIZE=0
+export HISTFILE HISTFILESIZE HISTSIZE
+
+# Disable .lesshst
+LESSHISTFILE=/dev/null
+LESSHISTSIZE=0
+export LESSHISTFILE LESSHISTSIZE
+
+# Harden EDITOR
+EDITOR=rnano
+export EDITOR
+
+# Harden LESS
+PAGER=less
+SYSTEMD_PAGER=less
+SYSTEMD_PAGERSECURE=1
+LESSSECURE=1
+export PAGER SYSTEMD_PAGER SYSTEMD_PAGERSECURE LESSSECURE
+
+# Harden PATH
+PATH="/usr/sbin:/usr/bin"
+export PATH
+
+# Unset various variables
+unset LESSOPEN LESSCLOSE LOGNAME

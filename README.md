@@ -2,19 +2,23 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 03/24/21 <br/>
-Version: v1o
+Modified Date: 04/18/21 <br/>
+Version: v1p
 
 
 ## Changelog
-+ v1o
++ v1p
   * S1.sh
-    + Add canon printer drivers.
-    + Use libreoffice-fresh over Ubuntu release package.
-    + Force the use of the newest mainline kernel by default.
-    + Add a few more ctls.
-    + Enhance bashrc alias's.
-    + Begin systemd service hardening.
+    + Add new ctls.
+    + Add apparmor fix.
+    + Deprecate /etc/environment (Its variable's are now set in /etc/profile and */*bashrc).
+    + Add console and tty restrictions.
+    + /etc/modprobe.d/* upstream version update.
+    + Ship /etc/profile as a file instead of modifying the existing one.
+    + Ship /etc/systemd/resolved.conf as a file instead of modifying the existing one.
+    + bashrc:
+      * Update to match /etc/profile.
+      * Add an automatic mainline kernel cleanup method.
 
 
 ## Purpose

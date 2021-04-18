@@ -16,21 +16,34 @@ LESSHISTFILE=/dev/null
 LESSHISTSIZE=0
 export LESSHISTFILE LESSHISTSIZE
 
+# Harden EDITOR
+EDITOR=rnano
+export EDITOR
+
 # Harden LESS
+PAGER=less
+SYSTEMD_PAGER=less
 SYSTEMD_PAGERSECURE=1
 LESSSECURE=1
-export SYSTEMD_PAGERSECURE LESSSECURE
+export PAGER SYSTEMD_PAGER SYSTEMD_PAGERSECURE LESSSECURE
 
-# Unset LESSOPEN and LESSCLOSE
-unset LESSOPEN LESSCLOSE
+# Harden PATH
+PATH="/usr/sbin:/usr/bin"
+export PATH
+
+# Unset various variables
+unset LESSOPEN LESSCLOSE LOGNAME
 
 # Enhance terminal
 PROMPT_COMMAND='echo -en "\033]0; ${USER} @ ${PWD##*/} \a"'
 PS1='\n\e[0;36m\w\e[m\n>'
+COLORTERM=truecolor
+TERM=xterm-256color
+SYSTEMD_COLORS=1
+export COLORTERM TERM SYSTEMD_COLORS
 
 # Add apt alias's
 alias aptu='sudo apt update && sudo apt full-upgrade -y'
-alias aptuc='sudo ubuntu-mainline-kernel.sh -c'
 alias aptuk='sudo ubuntu-mainline-kernel.sh -i --yes'
 alias aptc='sudo apt autoremove -y && sudo apt autoclean && sudo apt clean'
 
@@ -44,9 +57,28 @@ alias cgrep='cgrep --color=auto -C 1'
 alias ls='ls --color=auto'
 alias ll='ls -la'
 
-# Add session alias's
+# Add session alias's and function's
 alias sleave="sudo find /var/log -type f -exec rm -f {} \; && sudo journalctl --rotate --vacuum-time=1s && sudo bleachbit --preset --clean && bleachbit --preset --clean && systemctl poweroff"
-alias supleave="aptu && aptuk && aptc && sleave"
+
+supleave() {
+	aptu
+	aptuk	
+	aptc
+	
+	local currentkernel="v$(uname -r | sed "s/-generic//g")"
+	local kernelarray=($(ubuntu-mainline-kernel.sh -l))
+	
+  	for kernel in "${kernelarray[@]}"
+  	do		
+  	  	if [[ "${currentkernel}" != "${kernel}" ]]; then
+    		sudo ubuntu-mainline-kernel.sh -u "${kernel}" --yes
+		fi
+  	done
+
+	sudo update-grub
+	
+	sleave
+}
 
 # Add system alias's
 alias serr="journalctl -b -p err"
