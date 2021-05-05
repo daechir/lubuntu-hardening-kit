@@ -58,25 +58,37 @@ alias ls='ls --color=auto'
 alias ll='ls -la'
 
 # Add session alias's and function's
-alias sleave="sudo find /var/log -type f -exec rm -f {} \; && sudo journalctl --rotate --vacuum-time=1s && sudo bleachbit --preset --clean && bleachbit --preset --clean && systemctl poweroff"
+alias scleanlogs="sudo find /var/log -type f -exec rm -f {} \; && sudo journalctl --rotate --vacuum-time=1s"
+alias scleantmp="sudo bleachbit --preset --clean && bleachbit --preset --clean"
+alias schangeperms="find /home/${USER} -type d -exec chmod 700 {} \; && find /home/${USER} -type f -exec chmod 600 {} \;"
+alias sleave="scleanlogs && scleantmp && schangeperms && systemctl poweroff"
 
 supleave() {
 	aptu
-	aptuk	
+
+	local kernel_information=$(ubuntu-mainline-kernel.sh -c)
+	local current_kernel_version=$(echo "${kernel_information}" | grep -i "installed" | tail -c 8)
+	local latest_kernel_version=$(echo "${kernel_information}" | grep -i "kernel.ubuntu.com" | tail -c 8)
+
+	if [[ "${current_kernel_version}" < "${latest_kernel_version}" ]]; then
+		aptuk
+	fi
+
 	aptc
-	
-	local currentkernel="v$(uname -r | sed "s/-generic//g")"
-	local kernelarray=($(ubuntu-mainline-kernel.sh -l))
-	
-  	for kernel in "${kernelarray[@]}"
-  	do		
-  	  	if [[ "${currentkernel}" != "${kernel}" ]]; then
+
+	local installed_kernel_array=($(ubuntu-mainline-kernel.sh -l))
+
+  	for kernel in "${installed_kernel_array[@]}"
+  	do
+  		local kernel_cleaned=$(echo "${kernel}" | head -c 7)
+
+  	  	if [[ "${current_kernel_version}" > "${kernel_cleaned}" ]]; then
     		sudo ubuntu-mainline-kernel.sh -u "${kernel}" --yes
 		fi
   	done
 
 	sudo update-grub
-	
+
 	sleave
 }
 

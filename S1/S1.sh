@@ -19,10 +19,10 @@ install_setup() {
   sudo apt update
 
   ## Remove some default programs
-  local core_purge="2048-qt apport apport-symptoms avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd colord compton cups-browsed fcitx firefox ftp geoclue-2.0 irqbalance java-common kerneloops mobile-broadband-provider-info modemmanager noblenote partitionmanager plasma-discover popularity-contest qlipper qps qtpass quassel samba-libs skanlite snapd spice-vdagent tcpdump telnet transmission-qt trojita ubuntu-report unattended-upgrades usb-creator-kde usb-modeswitch usb-modeswitch-data vim vim-common whoopsie"
+  local core_purge="2048-qt apport apport-symptoms avahi-daemon avahi-utils bluedevil bluez bluez-cups bluez-obexd colord compton cups-browsed fcitx firefox ftp geoclue-2.0 irqbalance java-common kerneloops mobile-broadband-provider-info modemmanager noblenote partitionmanager picom plasma-discover popularity-contest qlipper qps qtpass quassel samba-libs skanlite snapd spice-vdagent tcpdump telnet transmission-qt trojita ubuntu-report unattended-upgrades usb-creator-kde usb-modeswitch usb-modeswitch-data vim vim-common whoopsie"
 
   if [[ -n "${superlite}" ]]; then
-    core_purge="${core_purge} ark cups htop k3b kcalc libreoffice muon screengrab scrot vlc"
+    core_purge="${core_purge} lxqt-archiver cups htop k3b kcalc libreoffice muon screengrab scrot vlc"
   fi
 
   sudo apt remove --purge $core_purge -y
@@ -34,7 +34,7 @@ install_setup() {
   local core_pack_1="apt-transport-https curl bleachbit gnupg gufw"
 
   if [[ -z "${superlite}" ]]; then
-    core_pack_1="${core_pack} simple-scan"
+    core_pack_1="${core_pack_1} simple-scan"
   fi
 
   # Install core_pack_1
@@ -90,6 +90,7 @@ toggle_systemctl() {
     "colord.service"
     "cups-browsed.service"
     "dundee.service"
+    "grub-initrd-fallback.service"
     "irqbalance.service"
     "kerneloops.service"
     "ModemManager.service"
@@ -100,6 +101,7 @@ toggle_systemctl() {
     "rsyslog.service"
     "rtkit-daemon.service"
     "snapd.service"
+    "snapd.seeded.service"
     "spice-vdagent.service"
     "spice-vdagentd.service"
     "systemd-coredump@.service"
@@ -123,7 +125,6 @@ toggle_systemctl() {
     "spice-vdagentd.socket"
     "syslog.socket"
     "systemd-coredump.socket"
-    "systemd-journal-remote.socket"
     "systemd-networkd.socket"
     "systemd-rfkill.socket"
     "bluetooth.target"

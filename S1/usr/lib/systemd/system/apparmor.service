@@ -31,12 +31,18 @@ ExecReload=/lib/apparmor/apparmor.systemd reload
 ExecStop=/bin/true
 RemainAfterExit=yes
 
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
 CapabilityBoundingSet=CAP_MAC_ADMIN
 DevicePolicy=closed
+KeyringMode=private
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 PrivateNetwork=yes
 PrivateTmp=yes

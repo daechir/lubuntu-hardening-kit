@@ -5,15 +5,21 @@ Documentation=man:udisks(8)
 [Service]
 Type=dbus
 BusName=org.freedesktop.UDisks2
-ExecStart=/usr/lib/udisks2/udisksd
+ExecStart=/usr/libexec/udisks2/udisksd
 KillSignal=SIGINT
 
-CapabilityBoundingSet=CAP_SYS_ADMIN CAP_SYS_RAWIO
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_SYS_RAWIO CAP_SETGID
 #DevicePolicy=strict
+KeyringMode=private
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 #PrivateDevices=yes
+#PrivateIPC=yes
 #PrivateMounts=yes
 #PrivateNetwork=yes
 #PrivateTmp=yes

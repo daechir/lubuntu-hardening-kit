@@ -5,14 +5,20 @@ Documentation=man:polkit(8)
 [Service]
 Type=dbus
 BusName=org.freedesktop.PolicyKit1
-ExecStart=/usr/lib/policykit-1/polkitd --no-debug
+ExecStart=/usr/libexec/polkitd --no-debug
+
+StandardInput=null
+StandardOutput=null
+StandardError=null
 
 CapabilityBoundingSet=CAP_SETGID CAP_SETUID CAP_SYS_PTRACE
 DevicePolicy=closed
+KeyringMode=private
 LockPersonality=yes
 #MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 PrivateNetwork=yes
 PrivateTmp=yes

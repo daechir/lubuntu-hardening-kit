@@ -2,8 +2,8 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 04/18/21 <br/>
-Version: v1p
+Modified Date: 05/05/21 <br/>
+Version: v1p1
 
 
 ## Changelog
@@ -19,6 +19,21 @@ Version: v1p
     + bashrc:
       * Update to match /etc/profile.
       * Add an automatic mainline kernel cleanup method.
++ v1p1
+  * README.md
+    + Update Supported Versions table.
+    + Add Regarding Version Deprecation section.
+  * S1.sh
+    + Fix various typos and unwanted bits.
+    + Update systemd services to match the ones shipped in 21.04.
+    + Improve isolation of all existing systemd services.
+    + Also add isolation for dbus.service (More service isolation will come later).
+    + bashrc:
+      * Add a syntax check to prevent kernel updates from applying everytime supleave is run.
+      * Fix supleaves automatic mainline kernel cleanup method.
+        + When on a kernel < the latest it would automatically purge it after installation (oops).
+  * S2.sh
+    + Config file updates (again).
 
 
 ## Purpose
@@ -46,6 +61,11 @@ Then merely execute this command in terminal inside the newly installed Lubuntu:
 ## Supported Versions
 | Version | Supported |
 | --- | --- |
-| 20.04* LTS | Y |
-| 18.04* LTS | N, Deprecated |
+| 21.04* | Y |
+| Any version < 21.04* | N, Deprecated |
+
+
+## Regarding Version Deprecation
+With v1p1 any Lubuntu version preceeding 21.04 is no longer supported.<br/>
+This was purposefully done because Linux kernel 5.12 or higher now requires a newer version of glibc which isn't shipped in those versions.
 

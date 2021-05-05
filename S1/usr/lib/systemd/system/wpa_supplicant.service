@@ -10,12 +10,18 @@ Type=dbus
 BusName=fi.w1.wpa_supplicant1
 ExecStart=/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant
 
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 DevicePolicy=closed
+KeyringMode=private
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 #PrivateNetwork=yes
 PrivateTmp=yes

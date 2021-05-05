@@ -26,17 +26,22 @@ RestartSec=0
 RuntimeDirectoryPreserve=yes
 RuntimeDirectory=systemd/journal
 Sockets=systemd-journald.socket systemd-journald-dev-log.socket systemd-journald-audit.socket
-StandardOutput=null
 Type=notify
 WatchdogSec=3min
 
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
 CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_PTRACE CAP_SYSLOG CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_CHOWN CAP_DAC_READ_SEARCH CAP_FOWNER CAP_SETUID CAP_SETGID CAP_MAC_OVERRIDE
 DevicePolicy=closed
+KeyringMode=private
 DeviceAllow=char-* rw
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 #PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 PrivateNetwork=yes
 #PrivateTmp=yes

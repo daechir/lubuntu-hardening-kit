@@ -1,30 +1,33 @@
 [Unit]
-Description=lubuntu-control-defaults.sh
+Description=D-Bus System Message Bus
+Documentation=man:dbus-daemon(1)
+Requires=dbus.socket
+# Do not stop on shutdown
 DefaultDependencies=no
-Conflicts=shutdown.target
-After=systemd-modules-load.service
-Before=systemd-sysctl.service systemd-user-sessions.service dbus.service NetworkManager.service wpa_supplicant.service
-Before=multi-user.target network-pre.target network.target network-online.target graphical.target shutdown.target
+Wants=sysinit.target
+After=sysinit.target basic.target
 
 [Service]
-Type=oneshot
-ExecStart=/usr/bin/lubuntu-control-defaults.sh
+ExecStart=@/usr/bin/dbus-daemon @dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+ExecReload=/usr/bin/dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.DBus / org.freedesktop.DBus.ReloadConfig
+OOMScoreAdjust=-900
 
 StandardInput=null
 StandardOutput=null
 StandardError=null
 
-CapabilityBoundingSet=
+CapabilityBoundingSet=CAP_SETGID CAP_SETUID CAP_SYSLOG
 DevicePolicy=closed
 KeyringMode=private
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 PrivateNetwork=yes
 PrivateTmp=yes
-PrivateUsers=yes
+#PrivateUsers=yes
 ProtectClock=yes
 ProtectControlGroups=yes
 ProtectHome=yes
@@ -34,7 +37,7 @@ ProtectKernelTunables=yes
 ProtectKernelLogs=yes
 ProtectProc=invisible
 ProcSubset=pid
-#ProtectSystem=strict
+ProtectSystem=full
 RestrictAddressFamilies=AF_UNIX
 RestrictNamespaces=yes
 RestrictRealtime=yes
@@ -44,6 +47,3 @@ SystemCallFilter=@system-service
 SystemCallErrorNumber=EPERM
 IPAddressDeny=any
 UMask=0077
-
-[Install]
-WantedBy=sysinit.target

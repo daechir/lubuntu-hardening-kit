@@ -1,4 +1,4 @@
-#  SPDX-License-Identifier: LGPL-2.1+
+#  SPDX-License-Identifier: LGPL-2.1-or-later
 #
 #  This file is part of systemd.
 #
@@ -16,10 +16,8 @@ Before=sysinit.target
 ConditionPathIsReadWrite=/sys
 
 [Service]
-DeviceAllow=block-* rwm
-DeviceAllow=char-* rwm
 Type=notify
-# Note that udev also adjusts the OOM score internally and will reset the value internally for its workers
+# Note that udev will reset the value internally for its workers
 OOMScoreAdjust=-1000
 Sockets=systemd-udevd-control.socket systemd-udevd-kernel.socket
 Restart=always
@@ -30,12 +28,20 @@ KillMode=mixed
 TasksMax=infinity
 WatchdogSec=3min
 
-#CapabilityBoundingSet=
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_SYS_MODULE CAP_SYS_RAWIO
 #DevicePolicy=strict
+DeviceAllow=block-* rwm
+DeviceAllow=char-* rwm
+KeyringMode=private
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 #PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 #PrivateNetwork=yes
 #PrivateTmp=yes
@@ -50,7 +56,7 @@ ProtectHostname=yes
 ProtectProc=invisible
 #ProcSubset=pid
 ProtectSystem=full
-RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
 RestrictNamespaces=yes
 RestrictRealtime=yes
 RestrictSUIDSGID=yes

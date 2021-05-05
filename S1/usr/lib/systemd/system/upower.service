@@ -5,19 +5,25 @@ Documentation=man:upowerd(8)
 [Service]
 Type=dbus
 BusName=org.freedesktop.UPower
-ExecStart=/usr/lib/upower/upowerd
+ExecStart=/usr/libexec/upowerd
 Restart=on-failure
 
 LimitMEMLOCK=0
 ReadWritePaths=/var/lib/upower
 StateDirectory=upower
 
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
 CapabilityBoundingSet=
 #DevicePolicy=strict
+KeyringMode=private
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 #PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 #PrivateNetwork=yes
 PrivateTmp=yes

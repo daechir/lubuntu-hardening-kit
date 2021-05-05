@@ -2,24 +2,32 @@
 Description=Entropy Daemon based on the HAVEGE algorithm
 Documentation=man:haveged(8) http://www.issihosts.com/haveged/
 DefaultDependencies=no
-ConditionVirtualization=!container
-After=apparmor.service systemd-random-seed.service systemd-tmpfiles-setup.service
+After=apparmor.service systemd-tmpfiles-setup.service systemd-tmpfiles-setup-dev.service
 Before=sysinit.target shutdown.target
 Conflicts=shutdown.target
+# RNDADDENTROPY ioctl requires host-level CAP_SYS_ADMIN, fails in unprivileged container
+ConditionVirtualization=!container
 
 [Service]
 EnvironmentFile=-/etc/default/haveged
 ExecStart=/usr/sbin/haveged --Foreground --verbose=1 $DAEMON_ARGS
-SuccessExitStatus=143
+Restart=always
+SuccessExitStatus=137 143
 
 SecureBits=noroot-locked
 
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
 CapabilityBoundingSet=CAP_SYS_ADMIN
 DevicePolicy=closed
+KeyringMode=private
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
 PrivateDevices=yes
+PrivateIPC=yes
 PrivateMounts=yes
 PrivateNetwork=yes
 #PrivateTmp=yes
@@ -39,11 +47,12 @@ RestrictNamespaces=yes
 RestrictRealtime=yes
 RestrictSUIDSGID=yes
 SystemCallArchitectures=native
-SystemCallFilter=@system-service
-SystemCallFilter=~@mount
+SystemCallFilter=@basic-io @file-system @io-event @network-io @signal
+SystemCallFilter=arch_prctl brk ioctl mprotect sysinfo
 SystemCallErrorNumber=EPERM
 IPAddressDeny=any
 UMask=0077
 
 [Install]
-WantedBy=default.target
+WantedBy=sysinit.target
+
