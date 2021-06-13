@@ -1,11 +1,11 @@
 #!/bin/bash
-# This is a tinified version of xenos-control-dns.sh aimed at Lubuntu 20.04* LTS.
+# This is a tinified version of xenos-control-dns.sh aimed at Lubuntu 21.04*.
 # It's intention is to ensure that certain networking features remain off.
 #
 # Author: Daechir
 # Author URL: https://github.com/daechir
-# Modified Date: 02/20/21
-# Version: v1c
+# Modified Date: 06/13/21
+# Version: v1d
 
 
 initialize(){
@@ -36,6 +36,8 @@ setup_connectivity(){
   if [[ -n "${xenos_connection}" ]]; then
     if [[ "${xenos_device}" == wl* ]]; then
       nmcli connection mod "${xenos_connection}" 802-11-wireless.powersave 2
+      nmcli connection mod "${xenos_connection}" 802-11-wireless.wake-on-wlan 0x8000
+      iw "${xenos_device}" set power_save off
     fi
 
     nmcli connection mod "${xenos_connection}" connection.llmnr 0

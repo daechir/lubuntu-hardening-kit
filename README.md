@@ -2,38 +2,30 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 05/05/21 <br/>
-Version: v1p1
+Modified Date: 06/13/21 <br/>
+Version: v1q
 
 
 ## Changelog
-+ v1p
++ v1q
   * S1.sh
-    + Add new ctls.
-    + Add apparmor fix.
-    + Deprecate /etc/environment (Its variable's are now set in /etc/profile and */*bashrc).
-    + Add console and tty restrictions.
-    + /etc/modprobe.d/* upstream version update.
-    + Ship /etc/profile as a file instead of modifying the existing one.
-    + Ship /etc/systemd/resolved.conf as a file instead of modifying the existing one.
+    + Refractoring.
+    + Update brave installation method.
+    + Fix NetworkManager mac address randomization race condition.
+    + Add isolation for the following services:
+      * Ufw.service
+      * Cups.service
+    + Add dbus hardening.
+    + Add randomize_kstack_offset=1 parameter for upcoming linux kernel 5.13 security feature.
     + bashrc:
-      * Update to match /etc/profile.
-      * Add an automatic mainline kernel cleanup method.
-+ v1p1
-  * README.md
-    + Update Supported Versions table.
-    + Add Regarding Version Deprecation section.
-  * S1.sh
-    + Fix various typos and unwanted bits.
-    + Update systemd services to match the ones shipped in 21.04.
-    + Improve isolation of all existing systemd services.
-    + Also add isolation for dbus.service (More service isolation will come later).
-    + bashrc:
-      * Add a syntax check to prevent kernel updates from applying everytime supleave is run.
-      * Fix supleaves automatic mainline kernel cleanup method.
-        + When on a kernel < the latest it would automatically purge it after installation (oops).
+      * Add automatic system.map cleanup.
+    + 00_control_multicast.sh:
+      * Add additional tweaks for wireless devices.
+    + lubuntu-control-defaults.sh:
+      * Refractoring.
+      * Add control_suid().
   * S2.sh
-    + Config file updates (again).
+    + Refractoring.
 
 
 ## Purpose
@@ -47,6 +39,7 @@ The Lubuntu Hardening Kit serves as a custom automated hardening script to furth
 + Enforcing kernel module restrictions
 + Enforcing kernel hardening and optimizations
 + Isolating or sandboxing systemd services
++ Restricting dbus services
 
 And much much more. Audit the scripts to find out more. <br/>
 Btw, this script isn't intended to make your Lubuntu system bulletproof, if you want that it's best to move to something like Arch Linux and customize it yourself.

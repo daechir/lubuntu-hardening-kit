@@ -3,10 +3,14 @@
 set -xe
 
 
-install_setup() {
-  local superlite=""
-  local usecanon=""
+initialize(){
+  superlite=""
 
+  return 0
+}
+
+
+install_setup(){
   # Setup the firewall
   sudo ufw enable
   sudo systemctl enable ufw.service
@@ -41,11 +45,13 @@ install_setup() {
   sudo apt install $core_pack_1 -y
 
   # Brave
-  curl -s https://brave-browser-apt-release.s3.brave.com/brave-core.asc | sudo apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
-  echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+  sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee -a /etc/apt/sources.list.d/brave-browser-release.list > /dev/null
   local core_pack_2="brave-browser"
 
   # Canon printer drivers
+  local usecanon=""
+
   if [[ -z "${superlite}" && -n "${usecanon}" ]]; then
     sudo add-apt-repository ppa:thierry-f/fork-michael-gruz -y
     core_pack_2="${core_pack_2} cnijfilter2"
@@ -72,10 +78,12 @@ install_setup() {
 
   # And once again cleanup unused packages and or dependencies
   sudo apt autoremove -y && sudo apt autoclean && sudo apt clean
+
+  return 0
 }
 
 
-toggle_systemctl() {
+toggle_systemctl(){
   # Disable some unused services, sockets and targets
   local systemctl=(
     "accounts-daemon.service"
@@ -144,39 +152,67 @@ toggle_systemctl() {
 
   for ctl in "${systemctl[@]}"
   do
-    local ctlactive=$(systemctl status "${ctl}" | grep -i "active: active")
-    local ctlexist=$(ls -la /usr/lib/systemd/system | grep -i "${ctl}")
-
-    if [[ -n "${ctlactive}" ]]; then
-      sudo systemctl stop "${ctl}" 2> /dev/null
-    fi
-
-    if [[ -n "${ctlexist}" ]]; then
-      sudo systemctl disable "${ctl}"
-    fi
-
     sudo systemctl mask "${ctl}"
   done
+
+  return 0
 }
 
 
-misc_fixes() {
-  # Adjust journal file size
-  sudo sed -i "s/^#SystemMaxUse=/SystemMaxUse=50M/g" /etc/systemd/journald.conf
-
+misc_fixes(){
   # Fix apparmor boot time hanging issue
   sudo sed -i "s/^#write-cache/write-cache/g" /etc/apparmor/parser.conf
 
-  # Fix systemd shutdown hanging issue
-  sudo sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/g"  /etc/systemd/system.conf
-  sudo sed -i "s/^#DefaultTimeoutStartSec=.*/DefaultTimeoutStartSec=10s/g"  /etc/systemd/system.conf
+  # Fix NetworkManager mac address randomization race condition
+  sudo sed -i "d" /etc/NetworkManager/NetworkManager.conf
+  echo -e "# Configuration file for NetworkManager.\n# See \"man 5 NetworkManager.conf\" for details.\n\n[device]\nwifi.scan-rand-mac-address=no" | sudo tee -a /etc/NetworkManager/NetworkManager.conf > /dev/null
+
+  return 0
 }
 
 
-harden_parts() {
+harden_systemd_parts(){
+  # Harden /etc/systemd/coredump.conf
+  sudo sed -i "s/^#Storage=.*/Storage=none/g" /etc/systemd/coredump.conf
+  sudo sed -i "s/^#ProcessSizeMax=.*/ProcessSizeMax=0/g" /etc/systemd/coredump.conf
+
+  # Harden /etc/systemd/journald.conf
+  sudo sed -i "s/^#Storage=.*/Storage=persistent/g" /etc/systemd/journald.conf
+  sudo sed -i "s/^#Compress=.*/Compress=yes/g" /etc/systemd/journald.conf
+  sudo sed -i "s/^#SystemMaxUse=.*/SystemMaxUse=50M/g" /etc/systemd/journald.conf
+  sudo sed -i "s/^#ForwardToSyslog=.*/ForwardToSyslog=yes/g" /etc/systemd/journald.conf
+
+  # Harden /etc/systemd/resolved.conf
+  sudo cp etc/resolved.conf /etc/systemd
+
+  # Harden /etc/systemd/system.conf
+  sudo sed -i "s/^#DumpCore=.*/DumpCore=no/g" /etc/systemd/system.conf
+  sudo sed -i "s/^#CrashShell=.*/CrashShell=no/g" /etc/systemd/system.conf
+  sudo sed -i "s/^#SystemCallArchitectures=.*/SystemCallArchitectures=native/g" /etc/systemd/system.conf
+  sudo sed -i "s/^#DefaultTimeoutStartSec=.*/DefaultTimeoutStartSec=10s/g"  /etc/systemd/system.conf
+  sudo sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/g"  /etc/systemd/system.conf
+  sudo sed -i "s/^#DefaultLimitCORE=.*/DefaultLimitCORE=0/g" /etc/systemd/system.conf
+
+  # Harden /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowSuspend=.*/AllowSuspend=no/g" /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowHibernation=.*/AllowHibernation=no/g" /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowSuspendThenHibernate=.*/AllowSuspendThenHibernate=no/g" /etc/systemd/sleep.conf
+  sudo sed -i "s/^#AllowHybridSleep=.*/AllowHybridSleep=no/g" /etc/systemd/sleep.conf
+
+  # Harden services at /etc/systemd/system/
+  sudo cp -R usr/lib/systemd/system/ /etc/systemd/
+
+  if [[ -z "${superlite}" ]]; then
+    sudo cp -R usr/lib/systemd/system-optional/ /etc/systemd/
+  fi
+
+  return 0
+}
+
+harden_other_parts(){
   # Deprecate /etc/environment
   sudo sed -i "d" /etc/environment
-  
+
   # Harden apt
   echo -e "# Enable apt sandboxing.\nAPT::Sandbox::Seccomp \"true\";" | sudo tee -a /etc/apt/apt.conf.d/40sandbox > /dev/null
 
@@ -185,12 +221,21 @@ harden_parts() {
   sudo touch /etc/securetty
   echo -e "# File which lists terminals from which root can log in.\n# See securetty(5) for details." | sudo tee -a /etc/securetty > /dev/null
 
-  # Harden coredumps
-  echo -e "[Coredump]\nStorage=none\nProcessSizeMax=0" | sudo tee -a  /etc/systemd/coredump.conf > /dev/null
-  sudo sed -i "s/^#CrashShell=.*/CrashShell=no/g" /etc/systemd/system.conf
-  sudo sed -i "s/^#DefaultLimitCORE=/DefaultLimitCORE=0/g" /etc/systemd/system.conf
-  sudo sed -i "s/^#DumpCore=.*/DumpCore=no/g" /etc/systemd/system.conf
-  sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
+  # Harden dbus related items
+  local dbusctl=(
+    "/usr/share/dbus-1/system-services/org.freedesktop.Accounts.service"
+    "/usr/share/dbus-1/system-services/org.freedesktop.network1.service"
+    "/usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service"
+    "/usr/share/dbus-1/system-services/org.freedesktop.timedate1.service"
+    "/usr/share/dbus-1/system-services/org.freedesktop.timesync1.service"
+  )
+
+  for ctl in "${dbusctl[@]}"
+  do
+    sudo sed -i "d" "${ctl}"
+    sudo chmod 600 "${ctl}"
+    sudo chattr +i "${ctl}"
+  done
 
   # Harden hosts
   sudo sed -i "1,3!d" /etc/hosts
@@ -222,6 +267,7 @@ harden_parts() {
   grub_cmdline_linux="${grub_cmdline_linux} mce=0"
   grub_cmdline_linux="${grub_cmdline_linux} page_alloc.shuffle=1"
   grub_cmdline_linux="${grub_cmdline_linux} pti=on"
+  grub_cmdline_linux="${grub_cmdline_linux} randomize_kstack_offset=1"
   grub_cmdline_linux="${grub_cmdline_linux} slab_nomerge"
   grub_cmdline_linux="${grub_cmdline_linux} slub_debug=FZ"
   grub_cmdline_linux="${grub_cmdline_linux} vsyscall=none"
@@ -237,7 +283,8 @@ harden_parts() {
   grub_cmdline_linux="${grub_cmdline_linux} systemd.dump_core=0"
   sudo sed -i "s/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"${grub_cmdline_linux}\"/g" /etc/default/grub
 
-  # Harden maxsyslogins
+  # Harden limits.conf
+  sudo sed -i "s/^# End of file/* hard core 0/g" /etc/security/limits.conf
   echo -e "* hard maxsyslogins 1\n\n# End of file" | sudo tee -a  /etc/security/limits.conf > /dev/null
 
   ## Harden modules
@@ -247,39 +294,18 @@ harden_parts() {
     sudo cp "${modprobe}" /etc/modprobe.d/
   done
 
-  # Harden NetworkManager
-  sudo cp etc/NetworkManager/dispatcher.d/00_control_multicast.sh /etc/NetworkManager/dispatcher.d/
-  sudo chmod 700 /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
-  sudo chattr +i /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
+  ## Harden pam.d
+  # SU elevation, even though SU will be disabled by locking root lets restrict it anyways
+  sudo sed -i "15 s/^# auth/auth/g" /etc/pam.d/su
+  # Lastly lock root account
+  sudo passwd -l root
 
   # Harden profile
   sudo cp etc/profile /etc/
 
-  # Harden root account
-  sudo sed -i "15 s/^# auth/auth/g" /etc/pam.d/su
-  sudo passwd -l root
-
   # Harden sysctl
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.d/
   sudo cp etc/00_xenos_hardening.conf /etc/sysctl.conf
-
-  # Harden Systemd-resolved settings
-  sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-  sudo cp etc/resolved.conf /etc/systemd
-
-  # Harden Systemd sleep
-  sudo sed -i "s/^#AllowSuspend=.*/AllowSuspend=no/g" /etc/systemd/sleep.conf
-  sudo sed -i "s/^#AllowHibernation=.*/AllowHibernation=no/g" /etc/systemd/sleep.conf
-  sudo sed -i "s/^#AllowSuspendThenHibernate=.*/AllowSuspendThenHibernate=no/g" /etc/systemd/sleep.conf
-  sudo sed -i "s/^#AllowHybridSleep=.*/AllowHybridSleep=no/g" /etc/systemd/sleep.conf
-  sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-hibernate.desktop
-  sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-suspend.desktop
-  sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-leave.desktop
-
-  # Harden Systemd services
-  sudo sed -i "s/^#SystemCallArchitectures=/SystemCallArchitectures=native/g" /etc/systemd/system.conf
-
-  sudo cp -R usr/lib/systemd/system/ /etc/systemd/
 
   # Harden mount options
   sudo sed -i "s/defaults/defaults,noatime/g" /etc/fstab
@@ -298,9 +324,22 @@ harden_parts() {
   # Regenerate grub
   sudo update-grub
 
+  # Hide lxqt items
+  sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-hibernate.desktop
+  sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-suspend.desktop
+  sudo sed -i "s/^OnlyShowIn=.*/NoDisplay=true;/g" /usr/share/applications/lxqt-leave.desktop
+
   # Setup .bashrc
   sudo cp tilde/bashrc /etc/skel/.bashrc
   sudo cp /etc/skel/.bashrc ~
+
+  # Setup systemd-resolved stub resolver
+  sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+  # Setup 00_control_multicast.sh
+  sudo cp etc/NetworkManager/dispatcher.d/00_control_multicast.sh /etc/NetworkManager/dispatcher.d/
+  sudo chmod 700 /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
+  sudo chattr +i /etc/NetworkManager/dispatcher.d/00_control_multicast.sh
 
   # Setup lubuntu-control-defaults
   sudo cp etc/systemd/system/lubuntu-control-defaults.service /etc/systemd/system/
@@ -308,11 +347,17 @@ harden_parts() {
   sudo chmod 700 /usr/bin/lubuntu-control-defaults.sh
   sudo chattr +i /usr/bin/lubuntu-control-defaults.sh
   sudo systemctl enable lubuntu-control-defaults.service
+
+  return 0
 }
 
 
+initialize
 install_setup
 toggle_systemctl
 misc_fixes
-harden_parts
+harden_systemd_parts
+harden_other_parts
+
+exit 0
 

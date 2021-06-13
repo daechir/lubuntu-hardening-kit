@@ -1,0 +1,50 @@
+[Unit]
+Description=CUPS Scheduler
+Documentation=man:cupsd(8)
+After=network.target sssd.service ypbind.service nslcd.service
+Requires=cups.socket
+
+[Service]
+ExecStart=/usr/sbin/cupsd -l
+Type=notify
+Restart=on-failure
+
+StandardInput=null
+StandardOutput=null
+StandardError=null
+
+#CapabilityBoundingSet=
+#DevicePolicy=strict
+KeyringMode=private
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+#NoNewPrivileges=yes
+#PrivateDevices=yes
+PrivateIPC=yes
+PrivateMounts=yes
+PrivateNetwork=yes
+PrivateTmp=yes
+#PrivateUsers=yes
+#ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectProc=invisible
+ProcSubset=pid
+ProtectSystem=full
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+IPAddressDeny=any
+UMask=0077
+
+[Install]
+Also=cups.socket cups.path
+WantedBy=printer.target

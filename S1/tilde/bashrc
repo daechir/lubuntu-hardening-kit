@@ -59,9 +59,10 @@ alias ll='ls -la'
 
 # Add session alias's and function's
 alias scleanlogs="sudo find /var/log -type f -exec rm -f {} \; && sudo journalctl --rotate --vacuum-time=1s"
+alias scleanmaps="sudo find /boot -type f -iname "*system.map*" -exec shred -f -u -z {} \;"
 alias scleantmp="sudo bleachbit --preset --clean && bleachbit --preset --clean"
 alias schangeperms="find /home/${USER} -type d -exec chmod 700 {} \; && find /home/${USER} -type f -exec chmod 600 {} \;"
-alias sleave="scleanlogs && scleantmp && schangeperms && systemctl poweroff"
+alias sleave="scleanlogs && scleanmaps && scleantmp && schangeperms && systemctl poweroff"
 
 supleave() {
 	aptu

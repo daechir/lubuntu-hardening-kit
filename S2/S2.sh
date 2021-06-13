@@ -3,7 +3,7 @@
 set -xe
 
 
-install_config() {
+install_config(){
   local bleachbit_hash=$(cat /dev/urandom | tr -dc "a-zA-Z0-9" | fold -w 128 | head -n 1)
 
   # Configure our config files
@@ -27,8 +27,12 @@ install_config() {
   sudo cp -R Transcendence /usr/share/sddm/themes/
   sudo chmod -R 755 /usr/share/sddm/themes/Transcendence/
   echo -e "[Theme]\nCurrent=Transcendence" | sudo tee -a /etc/sddm.conf > /dev/null
+
+  return 0
 }
 
 
 install_config
+
+exit 0
 
