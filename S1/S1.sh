@@ -9,7 +9,6 @@ initialize(){
   return 0
 }
 
-
 install_setup(){
   # Setup the firewall
   sudo ufw enable
@@ -81,7 +80,6 @@ install_setup(){
 
   return 0
 }
-
 
 toggle_systemctl(){
   # Disable some unused services, sockets and targets
@@ -158,7 +156,6 @@ toggle_systemctl(){
   return 0
 }
 
-
 misc_fixes(){
   # Fix apparmor boot time hanging issue
   sudo sed -i "s/^#write-cache/write-cache/g" /etc/apparmor/parser.conf
@@ -170,11 +167,9 @@ misc_fixes(){
   return 0
 }
 
-
 harden_systemd_parts(){
   # Harden /etc/systemd/coredump.conf
-  sudo sed -i "s/^#Storage=.*/Storage=none/g" /etc/systemd/coredump.conf
-  sudo sed -i "s/^#ProcessSizeMax=.*/ProcessSizeMax=0/g" /etc/systemd/coredump.conf
+  echo -e "[Coredump]\nStorage=none\nProcessSizeMax=0" | sudo tee -a /etc/systemd/coredump.conf > /dev/null
 
   # Harden /etc/systemd/journald.conf
   sudo sed -i "s/^#Storage=.*/Storage=persistent/g" /etc/systemd/journald.conf
@@ -203,7 +198,7 @@ harden_systemd_parts(){
   sudo cp -R usr/lib/systemd/system/ /etc/systemd/
 
   if [[ -z "${superlite}" ]]; then
-    sudo cp -R usr/lib/systemd/system-optional/ /etc/systemd/
+    sudo cp usr/lib/systemd/system-optional/cups.service /etc/systemd/system/
   fi
 
   return 0
@@ -220,22 +215,6 @@ harden_other_parts(){
   echo -e "\n+:(wheel):LOCAL\n-:ALL:ALL" | sudo tee -a /etc/security/access.conf > /dev/null
   sudo touch /etc/securetty
   echo -e "# File which lists terminals from which root can log in.\n# See securetty(5) for details." | sudo tee -a /etc/securetty > /dev/null
-
-  # Harden dbus related items
-  local dbusctl=(
-    "/usr/share/dbus-1/system-services/org.freedesktop.Accounts.service"
-    "/usr/share/dbus-1/system-services/org.freedesktop.network1.service"
-    "/usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service"
-    "/usr/share/dbus-1/system-services/org.freedesktop.timedate1.service"
-    "/usr/share/dbus-1/system-services/org.freedesktop.timesync1.service"
-  )
-
-  for ctl in "${dbusctl[@]}"
-  do
-    sudo sed -i "d" "${ctl}"
-    sudo chmod 600 "${ctl}"
-    sudo chattr +i "${ctl}"
-  done
 
   # Harden hosts
   sudo sed -i "1,3!d" /etc/hosts

@@ -2,8 +2,8 @@
 Author: Daechir <br/>
 Author URL: https://github.com/daechir <br/>
 License: GNU GPL <br/>
-Modified Date: 06/13/21 <br/>
-Version: v1q
+Modified Date: 06/20/21 <br/>
+Version: v1q1
 
 
 ## Changelog
@@ -26,6 +26,13 @@ Version: v1q
       * Add control_suid().
   * S2.sh
     + Refractoring.
++ v1q1
+  * S1.sh
+    + Fix a few missed changes.
+    + Regress dbus hardening.
+      * This type of hardening under Ubuntu based distributions actually makes apt and apt-get fail if it touches a immutable file.
+    + bashrc:
+      * Add a mechanism to enable temporary suid permissions on certain binaries for supleave() to run successfully.
 
 
 ## Purpose
@@ -39,7 +46,6 @@ The Lubuntu Hardening Kit serves as a custom automated hardening script to furth
 + Enforcing kernel module restrictions
 + Enforcing kernel hardening and optimizations
 + Isolating or sandboxing systemd services
-+ Restricting dbus services
 
 And much much more. Audit the scripts to find out more. <br/>
 Btw, this script isn't intended to make your Lubuntu system bulletproof, if you want that it's best to move to something like Arch Linux and customize it yourself.

@@ -65,32 +65,34 @@ alias schangeperms="find /home/${USER} -type d -exec chmod 700 {} \; && find /ho
 alias sleave="scleanlogs && scleanmaps && scleantmp && schangeperms && systemctl poweroff"
 
 supleave() {
-	aptu
+  sudo chmod +s /usr/bin/apt /usr/bin/apt-get /usr/bin/pkexec
 
-	local kernel_information=$(ubuntu-mainline-kernel.sh -c)
-	local current_kernel_version=$(echo "${kernel_information}" | grep -i "installed" | tail -c 8)
-	local latest_kernel_version=$(echo "${kernel_information}" | grep -i "kernel.ubuntu.com" | tail -c 8)
+  aptu
 
-	if [[ "${current_kernel_version}" < "${latest_kernel_version}" ]]; then
-		aptuk
-	fi
+  local kernel_information=$(ubuntu-mainline-kernel.sh -c)
+  local current_kernel_version=$(echo "${kernel_information}" | grep -i "installed" | tail -c 8)
+  local latest_kernel_version=$(echo "${kernel_information}" | grep -i "kernel.ubuntu.com" | tail -c 8)
 
-	aptc
+  if [[ "${current_kernel_version}" < "${latest_kernel_version}" ]]; then
+    aptuk
+  fi
 
-	local installed_kernel_array=($(ubuntu-mainline-kernel.sh -l))
+  aptc
 
-  	for kernel in "${installed_kernel_array[@]}"
-  	do
-  		local kernel_cleaned=$(echo "${kernel}" | head -c 7)
+  local installed_kernel_array=($(ubuntu-mainline-kernel.sh -l))
 
-  	  	if [[ "${current_kernel_version}" > "${kernel_cleaned}" ]]; then
-    		sudo ubuntu-mainline-kernel.sh -u "${kernel}" --yes
-		fi
-  	done
+  for kernel in "${installed_kernel_array[@]}"
+  do
+    local kernel_cleaned=$(echo "${kernel}" | head -c 7)
 
-	sudo update-grub
+    if [[ "${current_kernel_version}" > "${kernel_cleaned}" ]]; then
+      sudo ubuntu-mainline-kernel.sh -u "${kernel}" --yes
+    fi
+  done
 
-	sleave
+  sudo update-grub
+
+  sleave
 }
 
 # Add system alias's
